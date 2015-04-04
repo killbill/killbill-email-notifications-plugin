@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.killbill.billing.plugin.notification.email;
+package org.killbill.billing.plugin.notification.setup;
 
 import java.util.UUID;
 

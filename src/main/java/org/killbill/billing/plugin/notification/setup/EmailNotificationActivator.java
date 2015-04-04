@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.killbill.billing.plugin.notification.email;
+package org.killbill.billing.plugin.notification.setup;
 
 import java.util.Hashtable;
 
@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServlet;
 
 import org.killbill.billing.osgi.api.OSGIPluginProperties;
 import org.killbill.billing.payment.plugin.api.PaymentPluginApi;
+import org.killbill.billing.plugin.notification.http.EmailNotificationServlet;
 import org.killbill.killbill.osgi.libs.killbill.KillbillActivatorBase;
 import org.killbill.killbill.osgi.libs.killbill.OSGIKillbillEventDispatcher.OSGIKillbillEventHandler;
 import org.osgi.framework.BundleContext;

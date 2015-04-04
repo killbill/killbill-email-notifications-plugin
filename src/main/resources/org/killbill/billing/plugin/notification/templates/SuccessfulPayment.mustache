@@ -1,0 +1,21 @@
+{{text.successfulPaymentConfirmation}}.
+
+{{text.successfulPaymentDetail}}:
+
+{{text.invoiceNumber}}: {{invoice.invoiceNumber}}
+{{text.paymentDate}}: {{invoice.invoiceDate}}
+
+{{#invoice.invoiceItems}}
+{{startDate}} {{planName}} : {{invoice.currency}} {{amount}}
+{{/invoice.invoiceItems}}
+
+{{text.invoiceAmountPaid}}:  {{invoice.paidAmount}}
+{{text.invoiceAmountTotal}}: {{invoice.balance}}
+
+{{text.billedTo}}:
+{{account.companyName}}
+{{account.name}}
+{{account.address1}}
+{{account.city}}, {{account.stateOrProvince}} {{account.postalCode}}
+{{account.country}}
+
