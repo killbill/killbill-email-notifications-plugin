@@ -1,6 +1,6 @@
-This email confirms your recent payment.
+Oops, your most recent subscription payment was declined by your bank.
 
-Here are the details of your payment:
+Here are the details of your declined payment:
 
 {{text.invoiceNumber}}: {{invoice.invoiceNumber}}
 {{text.paymentDate}}: {{invoice.invoiceDate}}
@@ -12,11 +12,17 @@ Here are the details of your payment:
 {{text.invoiceAmountPaid}}:  {{invoice.paidAmount}}
 {{text.invoiceAmountTotal}}: {{invoice.balance}}
 
+
 {{text.billedTo}}:
 {{account.companyName}}
 {{account.name}}
 {{account.address1}}
 {{account.city}}, {{account.stateOrProvince}} {{account.postalCode}}
 {{account.country}}
+
+You can update your payment information here:
+{{text.paymentLink}}
+
+To ensure continued access to {{text.merchantName}}, please update your billing information within 14 days of your last statement.
 
 If you have any questions about your account, please reply to this email or contact {{text.merchantName}} Support at: {{text.merchantContactPhone}}

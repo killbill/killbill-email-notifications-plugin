@@ -1,0 +1,19 @@
+*** You Have a New Invoice ***
+
+You have a new invoice from {{text.merchantName}}, due on {{invoice.targetDate}}.
+
+{{text.invoiceNumber}}: {{invoice.invoiceNumber}}
+{{#invoice.invoiceItems}}
+{{startDate}} {{planName}} : {{invoice.currency}} {{amount}}
+{{/invoice.invoiceItems}}
+
+{{text.invoiceAmountTotal}}: {{invoice.balance}}
+
+{{text.billedTo}}:
+{{account.companyName}}
+{{account.name}}
+{{account.address1}}
+{{account.city}}, {{account.stateOrProvince}} {{account.postalCode}}
+{{account.country}}
+
+If you have any questions about your account, please reply to this email or contact {{text.merchantName}} Support at: {{text.merchantContactPhone}}
