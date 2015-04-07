@@ -57,9 +57,9 @@ public class TestTemplateRenderer {
 
         final AccountData account = createAccount();
         final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
-        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate(), new BigDecimal("123.45"), "chocolate-monthly"));
-        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate(), new BigDecimal("7.55"), "chocolate-monthly"));
-        final Invoice invoice = createInvoice(234, new LocalDate(), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.55"), "chocolate-monthly"));
+        final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
 
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForSuccessfulPayment(account, invoice, tenantContext);
@@ -96,9 +96,9 @@ public class TestTemplateRenderer {
 
         final AccountData account = createAccount();
         final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
-        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate(), new BigDecimal("123.45"), "chocolate-monthly"));
-        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate(), new BigDecimal("7.55"), "chocolate-monthly"));
-        final Invoice invoice = createInvoice(234, new LocalDate(), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.55"), "chocolate-monthly"));
+        final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
 
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForFailedPayment(account, invoice, tenantContext);
@@ -142,7 +142,7 @@ public class TestTemplateRenderer {
     public void testSubscriptionCancellationRequested() throws Exception {
 
         final AccountData account = createAccount();
-        final Subscription cancelledSubscription = createFutureCancelledSubscription(new LocalDate(), "myPlanName");
+        final Subscription cancelledSubscription = createFutureCancelledSubscription(new LocalDate("2015-04-06"), "myPlanName");
 
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForSubscriptionCancellationRequested(account, cancelledSubscription, tenantContext);
@@ -172,7 +172,7 @@ public class TestTemplateRenderer {
     public void testSubscriptionCancellationEffective() throws Exception {
 
         final AccountData account = createAccount();
-        final Subscription cancelledSubscription = createFutureCancelledSubscription(new LocalDate(), "myPlanName");
+        final Subscription cancelledSubscription = createFutureCancelledSubscription(new LocalDate("2015-04-06"), "myPlanName");
 
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForSubscriptionCancellationEffective(account, cancelledSubscription, tenantContext);
@@ -194,9 +194,9 @@ public class TestTemplateRenderer {
 
         final AccountData account = createAccount();
         final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
-        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate(), new BigDecimal("123.45"), "chocolate-monthly"));
-        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate(), new BigDecimal("7.55"), "chocolate-monthly"));
-        final Invoice invoice = createInvoice(234, new LocalDate(), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.55"), "chocolate-monthly"));
+        final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
 
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForUpComingInvoice(account, invoice, tenantContext);
@@ -769,6 +769,4 @@ public class TestTemplateRenderer {
             }
         };
     }
-
-
 }

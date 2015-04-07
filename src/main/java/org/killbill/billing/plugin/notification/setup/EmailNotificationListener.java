@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
@@ -36,11 +37,15 @@ import org.killbill.billing.account.api.AccountEmail;
 import org.killbill.billing.catalog.api.BillingActionPolicy;
 import org.killbill.billing.catalog.api.PlanPhasePriceOverride;
 import org.killbill.billing.catalog.api.PlanPhaseSpecifier;
+import org.killbill.billing.entitlement.api.Entitlement;
+import org.killbill.billing.entitlement.api.EntitlementApiException;
 import org.killbill.billing.entitlement.api.Subscription;
+import org.killbill.billing.entitlement.api.SubscriptionApiException;
 import org.killbill.billing.entitlement.api.SubscriptionEventType;
 import org.killbill.billing.invoice.api.DryRunArguments;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceApiException;
+import org.killbill.billing.invoice.api.InvoicePayment;
 import org.killbill.billing.notification.plugin.api.ExtBusEvent;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import org.killbill.billing.payment.api.Payment;
@@ -127,10 +132,72 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             logService.log(LogService.LOG_WARNING, String.format("Unable to find account: %s", killbillEvent.getAccountId()), e);
         } catch (InvoiceApiException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to retrieve invoice for account %s", killbillEvent.getAccountId()), e);
+        } catch (SubscriptionApiException e) {
+            logService.log(LogService.LOG_WARNING, String.format("Fail to retrieve subscription for account %s", killbillEvent.getAccountId()), e);
         } catch (EmailException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (IOException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
+        } catch (IllegalArgumentException e) {
+            logService.log(LogService.LOG_WARNING, e.getMessage(), e);
+        }
+    }
+
+    public void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException {
+
+        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_NOTIFICATION, String.format("Unexpected event %s", killbillEvent.getEventType()));
+
+        final String dryRunTimePropValue = configProperties.getString(INVOICE_DRY_RUN_TIME_PROPERTY);
+        Preconditions.checkArgument(dryRunTimePropValue != null, String.format("Cannot find property %s", INVOICE_DRY_RUN_TIME_PROPERTY));
+
+        final TimeSpan span = new TimeSpan(dryRunTimePropValue);
+        final DateTime targetDateTime = new DateTime(account.getTimeZone()).plus(span.getMillis());
+
+        final PluginCallContext callContext = new PluginCallContext(EmailNotificationActivator.PLUGIN_NAME, new DateTime(), context.getTenantId());
+        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerInvoiceGeneration(account.getId(), targetDateTime.toLocalDate(), NULL_DRY_RUN_ARGUMENTS, callContext);
+        if (invoice != null) {
+            final EmailContent emailContent = templateRenderer.generateEmailForUpComingInvoice(account, invoice, context);
+            sendEmail(account, emailContent, context);
+        }
+    }
+
+    public void sendEmailForSuccessfulPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException {
+        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.PAYMENT_SUCCESS, String.format("Unexpected event %s", killbillEvent.getEventType()));
+        sendEmailForPayment(account, killbillEvent, true, context);
+    }
+
+    public void sendEmailForFailedPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws EmailException, InvoiceApiException, IOException {
+        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.PAYMENT_FAILED, String.format("Unexpected event %s", killbillEvent.getEventType()));
+        sendEmailForPayment(account, killbillEvent, false, context);
+    }
+
+    public void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException {
+        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.SUBSCRIPTION_CANCEL, String.format("Unexpected event %s", killbillEvent.getEventType()));
+        final UUID subscriptionId = killbillEvent.getObjectId();
+
+        final Subscription subscription = osgiKillbillAPI.getSubscriptionApi().getSubscriptionForEntitlementId(subscriptionId, context);
+        if (subscription != null) {
+            final EmailContent emailContent = subscription.getState() == Entitlement.EntitlementState.CANCELLED ?
+                    templateRenderer.generateEmailForSubscriptionCancellationEffective(account, subscription, context) :
+                    templateRenderer.generateEmailForSubscriptionCancellationRequested(account, subscription, context);
+            sendEmail(account, emailContent, context);
+        }
+    }
+
+    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final boolean success, final TenantContext context) throws InvoiceApiException, IOException, EmailException {
+
+        final UUID paymentId = killbillEvent.getObjectId();
+        final List<InvoicePayment> invoicePayments = osgiKillbillAPI.getInvoicePaymentApi().getInvoicePayments(paymentId, context);
+        // TODO : Only support one payment per invoice (default recurring subscription case
+        Preconditions.checkArgument(invoicePayments != null && invoicePayments.size() == 1, String.format("Unexpected number of invoices %d for payment %s",
+                (invoicePayments == null ? 0 : invoicePayments.size()), paymentId));
+
+        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(invoicePayments.get(0).getId(), context);
+        if (invoice != null) {
+            final EmailContent emailContent = success ?
+                    templateRenderer.generateEmailForSuccessfulPayment(account, invoice, context) :
+                    templateRenderer.generateEmailForFailedPayment(account, invoice, context);
+            sendEmail(account, emailContent, context);
         }
     }
 
@@ -149,35 +216,6 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             }
         });
         emailSender.sendPlainTextEmail(ImmutableList.of(to), ImmutableList.copyOf(cc), emailContent.getSubject(), emailContent.getBody());
-    }
-
-    public void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException {
-        final String dryRunTimePropValue = configProperties.getString(INVOICE_DRY_RUN_TIME_PROPERTY);
-        if (dryRunTimePropValue == null) {
-            logService.log(LogService.LOG_WARNING, "Cannot find property " + INVOICE_DRY_RUN_TIME_PROPERTY);
-            return;
-        }
-        final TimeSpan span = new TimeSpan(dryRunTimePropValue);
-        final DateTime targetDateTime = new DateTime(account.getTimeZone()).plus(span.getMillis());
-
-        final PluginCallContext callContext = new PluginCallContext(EmailNotificationActivator.PLUGIN_NAME, new DateTime(), context.getTenantId());
-        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerInvoiceGeneration(account.getId(), targetDateTime.toLocalDate(), NULL_DRY_RUN_ARGUMENTS, callContext);
-        if (invoice != null) {
-            final EmailContent emailContent = templateRenderer.generateEmailForUpComingInvoice(account, invoice, context);
-            sendEmail(account, emailContent, context);
-        }
-    }
-
-    public void sendEmailForSuccessfulPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) {
-
-    }
-
-    public void sendEmailForFailedPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) {
-
-    }
-
-    public void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) {
-
     }
 
     private static final class EmailNotificationContext implements TenantContext {
