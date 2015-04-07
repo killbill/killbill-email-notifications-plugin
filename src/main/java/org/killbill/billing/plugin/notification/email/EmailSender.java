@@ -16,13 +16,12 @@
 
 package org.killbill.billing.plugin.notification.email;
 
+import com.google.common.base.Joiner;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
-import org.apache.commons.mail.SimpleEmail;
 import org.killbill.killbill.osgi.libs.killbill.OSGIConfigPropertiesService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.osgi.service.log.LogService;
 
 import java.io.IOException;
 import java.util.List;
@@ -45,11 +44,10 @@ public class EmailSender {
     private final String smtpServerName;
     private final String from;
     private final boolean useSSL;
+    private final LogService logService;
 
-
-    private final Logger log = LoggerFactory.getLogger(EmailSender.class);
-
-    public EmailSender(final OSGIConfigPropertiesService configProperties) {
+    public EmailSender(final OSGIConfigPropertiesService configProperties, final LogService logService) {
+        this.logService = logService;
         this.smtpServerName = configProperties.getString(SERVER_NAME_PROP);
         this.useSmtpPort = configProperties.getString(SERVER_PORT_PROP) != null ? Integer.valueOf(configProperties.getString(SERVER_PORT_PROP)) : 25;
         this.smtpUserName = configProperties.getString(SMTP_USER_PROP);
@@ -96,7 +94,7 @@ public class EmailSender {
 
         email.setSSL(useSSL);
 
-        log.info("Sending email to {}, cc {}, subject {}", new Object[]{to, cc, subject});
+        logService.log(LogService.LOG_INFO, String.format("Sending email to %s, cc %s, subject %s", to, cc, subject));
         email.send();
     }
 }
