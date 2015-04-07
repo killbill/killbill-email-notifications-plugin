@@ -41,7 +41,7 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         super.start(context);
 
         // Register an event listener (optional)
-        analyticsListener = new EmailNotificationListener(logService, killbillAPI);
+        analyticsListener = new EmailNotificationListener(logService, killbillAPI, configProperties);
         dispatcher.registerEventHandler(analyticsListener);
 
 

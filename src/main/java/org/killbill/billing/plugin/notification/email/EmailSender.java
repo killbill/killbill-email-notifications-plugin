@@ -16,17 +16,27 @@
 
 package org.killbill.billing.plugin.notification.email;
 
-import java.io.IOException;
-import java.util.List;
-
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.SimpleEmail;
+import org.killbill.killbill.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.List;
+
 public class EmailSender {
+
+    /* Reuse Kill Bill email properties; if needed we can have a different set for the plugin */
+    private static final String SERVER_NAME_PROP = "org.killbill.mail.smtp.host";
+    private static final String SERVER_PORT_PROP = "org.killbill.mail.smtp.port";
+    private static final String IS_SMTP_AUTH_PROP = "org.killbill.mail.smtp.auth";
+    private static final String SMTP_USER_PROP = "org.killbill.mail.smtp.user";
+    private static final String SMTP_PWD_PROP = "org.killbill.mail.smtp.password";
+    private static final String IS_USE_SSL_PROP = "org.killbill.mail.useSSL";
+    private static final String SMTP_FROM_PROP = "org.killbill.mail.from";
 
     private final boolean useSmtpAuth;
     private final int useSmtpPort;
@@ -39,53 +49,54 @@ public class EmailSender {
 
     private final Logger log = LoggerFactory.getLogger(EmailSender.class);
 
-    public EmailSender(String from, String smtpUserName, String smtpUserPassword, String smtpServerName, int useSmtpPort, boolean useSmtpAuth, boolean useSSL) {
-        this.useSmtpAuth = useSmtpAuth;
-        this.useSmtpPort = useSmtpPort;
-        this.smtpUserName = smtpUserName;
-        this.smtpUserPassword = smtpUserPassword;
-        this.smtpServerName = smtpServerName;
-        this.from = from;
-        this.useSSL = useSSL;
+    public EmailSender(final OSGIConfigPropertiesService configProperties) {
+        this.smtpServerName = configProperties.getString(SERVER_NAME_PROP);
+        this.useSmtpPort = configProperties.getString(SERVER_PORT_PROP) != null ? Integer.valueOf(configProperties.getString(SERVER_PORT_PROP)) : 25;
+        this.smtpUserName = configProperties.getString(SMTP_USER_PROP);
+        this.smtpUserPassword = configProperties.getString(SMTP_PWD_PROP);
+        this.from = configProperties.getString(SMTP_FROM_PROP);
+        this.useSSL = configProperties.getString(IS_USE_SSL_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_USE_SSL_PROP)) : false;
+        this.useSmtpAuth = configProperties.getString(IS_SMTP_AUTH_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_SMTP_AUTH_PROP)) : false;
     }
+
 
     public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody) throws EmailException {
         final HtmlEmail email = new HtmlEmail();
-            email.setHtmlMsg(htmlBody);
+        email.setHtmlMsg(htmlBody);
         sendEmail(to, cc, subject, email);
     }
 
     public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body) throws IOException, EmailException {
         final SimpleEmail email = new SimpleEmail();
-            email.setMsg(body);
+        email.setMsg(body);
         sendEmail(to, cc, subject, email);
     }
 
     private void sendEmail(final List<String> to, final List<String> cc, final String subject, final Email email) throws EmailException {
-            email.setSmtpPort(useSmtpPort);
-            if (useSmtpAuth) {
-                email.setAuthentication(smtpUserName, smtpUserPassword);
+        email.setSmtpPort(useSmtpPort);
+        if (useSmtpAuth) {
+            email.setAuthentication(smtpUserName, smtpUserPassword);
+        }
+        email.setHostName(smtpServerName);
+        email.setFrom(from);
+
+        email.setSubject(subject);
+
+        if (to != null) {
+            for (final String recipient : to) {
+                email.addTo(recipient);
             }
-            email.setHostName(smtpServerName);
-            email.setFrom(from);
+        }
 
-            email.setSubject(subject);
-
-            if (to != null) {
-                for (final String recipient : to) {
-                    email.addTo(recipient);
-                }
+        if (cc != null) {
+            for (final String recipient : cc) {
+                email.addCc(recipient);
             }
+        }
 
-            if (cc != null) {
-                for (final String recipient : cc) {
-                    email.addCc(recipient);
-                }
-            }
+        email.setSSL(useSSL);
 
-            email.setSSL(useSSL);
-
-            log.info("Sending email to {}, cc {}, subject {}", new Object[]{to, cc, subject});
-            email.send();
+        log.info("Sending email to {}, cc {}, subject {}", new Object[]{to, cc, subject});
+        email.send();
     }
 }
