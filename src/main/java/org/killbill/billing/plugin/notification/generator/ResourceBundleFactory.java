@@ -1,8 +1,8 @@
 package org.killbill.billing.plugin.notification.generator;
 
 import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import org.killbill.billing.util.callcontext.TenantContext;
-import org.killbill.xmlloader.UriAccessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +94,7 @@ public class ResourceBundleFactory {
 
     private ResourceBundle getBundleFromPropertiesFile(final String propertiesFileName) {
         try {
-            final InputStream inputStream = UriAccessor.accessUri(propertiesFileName);
+            final InputStream inputStream = this.getClass().getClassLoader().getResource(propertiesFileName).openStream();
             if (inputStream == null) {
                 return null;
             } else {
@@ -103,8 +103,6 @@ public class ResourceBundleFactory {
         } catch (IllegalArgumentException iae) {
             return null;
         } catch (MissingResourceException mrex) {
-            return null;
-        } catch (URISyntaxException e) {
             return null;
         } catch (IOException e) {
             return null;

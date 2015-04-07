@@ -11,12 +11,10 @@ import org.killbill.billing.plugin.notification.templates.TemplateType;
 import org.killbill.billing.plugin.notification.util.IOUtils;
 import org.killbill.billing.plugin.notification.util.LocaleUtils;
 import org.killbill.billing.util.callcontext.TenantContext;
-import org.killbill.xmlloader.UriAccessor;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
@@ -109,11 +107,7 @@ public class TemplateRenderer {
     }
 
     private String getDefaultTemplate(final String templateName) throws IOException {
-        try {
-            final InputStream templateStream = UriAccessor.accessUri(templateName);
-            return IOUtils.toString(templateStream);
-        } catch (URISyntaxException e) {
-            throw new IOException(e);
-        }
+        final InputStream templateStream = this.getClass().getClassLoader().getResource(templateName).openStream();
+        return IOUtils.toString(templateStream);
     }
 }
