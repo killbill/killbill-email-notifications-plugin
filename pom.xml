@@ -93,6 +93,8 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+            <!-- Explicitly override default scope from killbill-oss-parent -->
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.samskivert</groupId>
@@ -101,10 +103,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-email</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.kill-bill.commons</groupId>
-            <artifactId>killbill-xmlloader</artifactId>
         </dependency>
         <dependency>
             <groupId>org.skife.config</groupId>
@@ -148,7 +146,7 @@
                     <instructions>
                         <Bundle-Activator>org.killbill.billing.plugin.notification.setup.EmailNotificationActivator</Bundle-Activator>
                         <Export-Package />
-                        <Private-Package>org.killbill.billing.plugin.notification.email.*</Private-Package>
+                        <Private-Package>org.killbill.billing.plugin.notification.*</Private-Package>
                         <!-- Optional resolution because exported by the Felix system bundle -->
                         <Import-Package>*;resolution:=optional</Import-Package>
                     </instructions>
