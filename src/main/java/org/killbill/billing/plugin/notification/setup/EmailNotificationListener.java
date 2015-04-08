@@ -99,7 +99,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         this.osgiKillbillAPI = killbillAPI;
         this.configProperties = configProperties;
         this.emailSender = new EmailSender(configProperties, logService);
-        this.templateRenderer = new TemplateRenderer(new MustacheTemplateEngine(), new ResourceBundleFactory(killbillAPI.getTenantUserApi()), killbillAPI.getTenantUserApi());
+        this.templateRenderer = new TemplateRenderer(new MustacheTemplateEngine(), new ResourceBundleFactory(killbillAPI.getTenantUserApi(), logService), killbillAPI.getTenantUserApi(), logService);
     }
 
     @Override

@@ -13,6 +13,7 @@ import org.killbill.billing.plugin.notification.util.LocaleUtils;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.TenantContext;
+import org.osgi.service.log.LogService;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -32,13 +33,16 @@ public class TemplateRenderer {
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;
     private final TenantUserApi tenantApi;
+    private final LogService logService;
 
     public TemplateRenderer(final TemplateEngine templateEngine,
                             final ResourceBundleFactory bundleFactory,
-                            final TenantUserApi tenantApi) {
+                            final TenantUserApi tenantApi,
+                            final LogService logService) {
         this.templateEngine = templateEngine;
         this.bundleFactory = bundleFactory;
         this.tenantApi = tenantApi;
+        this.logService = logService;
     }
 
 

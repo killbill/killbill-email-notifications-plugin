@@ -37,6 +37,10 @@ import org.killbill.billing.tenant.api.TenantData;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.billing.util.callcontext.TenantContext;
+import org.osgi.framework.ServiceReference;
+import org.osgi.service.log.LogService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -51,13 +55,33 @@ import java.util.UUID;
 
 public class TestTemplateRenderer {
 
+    private final Logger log = LoggerFactory.getLogger(TestTemplateRenderer.class);
+
     private TemplateRenderer renderer;
 
     @BeforeClass(groups = "fast")
     public void beforeClass() throws Exception {
+
+        LogService logService = new LogService() {
+            @Override
+            public void log(int i, String s) {
+                log.info(s);
+            }
+            @Override
+            public void log(int i, String s, Throwable throwable) {
+                log.info(s, throwable);
+            }
+            @Override
+            public void log(ServiceReference serviceReference, int i, String s) {
+            }
+            @Override
+            public void log(ServiceReference serviceReference, int i, String s, Throwable throwable) {
+            }
+        };
+
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
-        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi());
-        renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi());
+        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi(), logService);
+        renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi(), logService);
     }
 
 

@@ -7,6 +7,7 @@ import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.tenant.api.TenantKV;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.TenantContext;
+import org.osgi.service.log.LogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,8 +24,7 @@ public class ResourceBundleFactory {
 
     private final String DEFAULT_TRANSLATION_PATH_PREFIX = "org/killbill/billing/plugin/notification/translations/";
 
-    private static final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
-
+    private final LogService logService;
     private final TenantUserApi tenantApi;
 
     public enum ResourceBundleType {
@@ -46,14 +46,14 @@ public class ResourceBundleFactory {
                     .append(":")
                     .append(this).toString();
         }
-
     }
 
-
-    public ResourceBundleFactory(final TenantUserApi tenantApi) {
+    public ResourceBundleFactory(final TenantUserApi tenantApi, final LogService logService) {
         this.tenantApi = tenantApi;
-
+        this.logService = logService;
     }
+
+
 
     public ResourceBundle createBundle(final Locale locale, final ResourceBundleType type, final TenantContext tenantContext) throws TenantApiException {
         if (tenantContext.getTenantId() == null) {
@@ -64,7 +64,7 @@ public class ResourceBundleFactory {
             try {
                 return new PropertyResourceBundle(new ByteArrayInputStream(bundle.getBytes(Charsets.UTF_8)));
             } catch (IOException e) {
-                logger.warn("Failed to de-serialize the property bundle for tenant {} and locale {}", tenantContext.getTenantId(), locale);
+                logService.log(LogService.LOG_WARNING, String.format("Failed to de-serialize the property bundle for tenant %s and locale %s", tenantContext.getTenantId(), locale));
                 // Fall through...
             }
         }
