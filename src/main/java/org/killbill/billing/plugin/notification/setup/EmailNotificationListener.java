@@ -49,6 +49,11 @@ import org.killbill.billing.invoice.api.InvoicePayment;
 import org.killbill.billing.notification.plugin.api.ExtBusEvent;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import org.killbill.billing.payment.api.Payment;
+import org.killbill.billing.payment.api.PaymentApiException;
+import org.killbill.billing.payment.api.PaymentTransaction;
+import org.killbill.billing.payment.api.PluginProperty;
+import org.killbill.billing.payment.api.TransactionStatus;
+import org.killbill.billing.payment.api.TransactionType;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.email.EmailSender;
 import org.killbill.billing.plugin.notification.generator.ResourceBundleFactory;
@@ -64,6 +69,7 @@ import org.osgi.service.log.LogService;
 import org.skife.config.TimeSpan;
 
 import javax.annotation.Nullable;
+import javax.print.DocFlavor;
 
 public class EmailNotificationListener implements OSGIKillbillEventHandler {
 
@@ -114,11 +120,8 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
                     break;
 
                 case PAYMENT_SUCCESS:
-                    sendEmailForSuccessfulPayment(account, killbillEvent, context);
-                    break;
-
                 case PAYMENT_FAILED:
-                    sendEmailForFailedPayment(account, killbillEvent, context);
+                    sendEmailForPayment(account, killbillEvent, context);
                     break;
 
                 case SUBSCRIPTION_CANCEL:
@@ -138,6 +141,8 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             logService.log(LogService.LOG_WARNING, String.format("Fail to retrieve invoice for account %s", killbillEvent.getAccountId()), e);
         } catch (SubscriptionApiException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to retrieve subscription for account %s", killbillEvent.getAccountId()), e);
+        } catch (PaymentApiException e) {
+            logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (EmailException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (IOException e) {
@@ -149,7 +154,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         }
     }
 
-    public void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException {
+    private void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException {
 
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_NOTIFICATION, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
@@ -167,17 +172,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         }
     }
 
-    public void sendEmailForSuccessfulPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException {
-        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.PAYMENT_SUCCESS, String.format("Unexpected event %s", killbillEvent.getEventType()));
-        sendEmailForPayment(account, killbillEvent, true, context);
-    }
-
-    public void sendEmailForFailedPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws EmailException, InvoiceApiException, IOException {
-        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.PAYMENT_FAILED, String.format("Unexpected event %s", killbillEvent.getEventType()));
-        sendEmailForPayment(account, killbillEvent, false, context);
-    }
-
-    public void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException {
+    private void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException {
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.SUBSCRIPTION_CANCEL, String.format("Unexpected event %s", killbillEvent.getEventType()));
         final UUID subscriptionId = killbillEvent.getObjectId();
 
@@ -190,19 +185,39 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         }
     }
 
-    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final boolean success, final TenantContext context) throws InvoiceApiException, IOException, EmailException {
+    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException {
+        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.PAYMENT_FAILED || killbillEvent.getEventType() == ExtBusEventType.PAYMENT_SUCCESS, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
         final UUID paymentId = killbillEvent.getObjectId();
-        final List<InvoicePayment> invoicePayments = osgiKillbillAPI.getInvoicePaymentApi().getInvoicePayments(paymentId, context);
-        // TODO : Only support one payment per invoice (default recurring subscription case
-        Preconditions.checkArgument(invoicePayments != null && invoicePayments.size() == 1, String.format("Unexpected number of invoices %d for payment %s",
-                (invoicePayments == null ? 0 : invoicePayments.size()), paymentId));
 
-        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(invoicePayments.get(0).getInvoiceId(), context);
-        if (invoice != null) {
-            final EmailContent emailContent = success ?
-                    templateRenderer.generateEmailForSuccessfulPayment(account, invoice, context) :
-                    templateRenderer.generateEmailForFailedPayment(account, invoice, context);
+        final Payment payment = osgiKillbillAPI.getPaymentApi().getPayment(paymentId, false, ImmutableList.<PluginProperty>of(), context);
+        final PaymentTransaction lastTransaction = payment.getTransactions().get(payment.getTransactions().size() - 1);
+
+        if (lastTransaction.getTransactionType() != TransactionType.PURCHASE &&
+                lastTransaction.getTransactionType() != TransactionType.REFUND) {
+            // Ignore for now, but this is easy to add...
+            return;
+        }
+
+        EmailContent emailContent = null;
+        if (lastTransaction.getTransactionType() == TransactionType.REFUND && lastTransaction.getTransactionStatus() == TransactionStatus.SUCCESS) {
+            emailContent = templateRenderer.generateEmailForPaymentRefund(account, lastTransaction, context);
+        } else {
+            final List<InvoicePayment> invoicePayments = osgiKillbillAPI.getInvoicePaymentApi().getInvoicePayments(paymentId, context);
+            // KB does not support payments spanning across multiple invoices
+            Preconditions.checkArgument(invoicePayments != null && invoicePayments.size() == 1, String.format("Unexpected number of invoices %d for payment %s",
+                    (invoicePayments == null ? 0 : invoicePayments.size()), paymentId));
+
+            final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(invoicePayments.get(invoicePayments.size() - 1).getInvoiceId(), context);
+            if (invoice != null) {
+                if (lastTransaction.getTransactionType() == TransactionType.PURCHASE && lastTransaction.getTransactionStatus() == TransactionStatus.SUCCESS) {
+                    emailContent = templateRenderer.generateEmailForSuccessfulPayment(account, invoice, context);
+                } else if (lastTransaction.getTransactionType() == TransactionType.PURCHASE && lastTransaction.getTransactionStatus() == TransactionStatus.PAYMENT_FAILURE) {
+                    emailContent = templateRenderer.generateEmailForFailedPayment(account, invoice, context);
+                }
+            }
+        }
+        if (emailContent != null) {
             sendEmail(account, emailContent, context);
         }
     }

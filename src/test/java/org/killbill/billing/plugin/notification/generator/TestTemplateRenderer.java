@@ -23,6 +23,10 @@ import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.api.InvoiceItemType;
 import org.killbill.billing.invoice.api.InvoicePayment;
+import org.killbill.billing.payment.api.PaymentTransaction;
+import org.killbill.billing.payment.api.TransactionStatus;
+import org.killbill.billing.payment.api.TransactionType;
+import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
@@ -134,6 +138,29 @@ public class TestTemplateRenderer {
         //System.err.println(email.getBody());
         Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Failed Payment");
         Assert.assertEquals(email.getBody(), expectedBody);
+    }
+
+
+    @Test(groups = "fast")
+    public void testPaymentrefund() throws Exception {
+
+        final AccountData account = createAccount();
+        final PaymentTransaction paymentTransaction = createPaymentTransaction(BigDecimal.TEN, Currency.USD);
+
+        final TenantContext tenantContext = createTenantContext();
+        final EmailContent email = renderer.generateEmailForPaymentRefund(account, paymentTransaction, tenantContext);
+
+        final String expectedBody = "*** Your payment has been refunded ***\n" +
+                "\n" +
+                "We have processed a refund in the amount of USD 10.\n" +
+                "\n" +
+                "This refund will appear on your next credit card statement in approximately 3-5 business days.\n" +
+                "\n" +
+                "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
+
+        // System.err.println(email.getBody());
+        Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Refund Receipt");
+        Assert.assertEquals(email.getBody(), expectedBody);
 
     }
 
@@ -205,7 +232,6 @@ public class TestTemplateRenderer {
                 "\n" +
                 "You have a new invoice from MERCHANT_NAME, due on 2015-04-06.\n" +
                 "\n" +
-                "Invoice #: 234\n" +
                 "2015-04-06 chocolate-monthly : USD 123.45\n" +
                 "2015-04-06 chocolate-monthly : USD 7.55\n" +
                 "\n" +
@@ -445,6 +471,7 @@ public class TestTemplateRenderer {
             }
         };
     }
+
 
     private InvoiceItem createInvoiceItem(final InvoiceItemType type, final LocalDate startDate, final BigDecimal amount, final String planName) {
         return new InvoiceItem() {
@@ -766,6 +793,86 @@ public class TestTemplateRenderer {
             @Override
             public Boolean isNotifiedForInvoices() {
                 return true;
+            }
+        };
+    }
+
+
+    private PaymentTransaction createPaymentTransaction(final BigDecimal amount, final Currency currency) {
+        return new PaymentTransaction() {
+            @Override
+            public UUID getPaymentId() {
+                return null;
+            }
+
+            @Override
+            public String getExternalKey() {
+                return null;
+            }
+
+            @Override
+            public TransactionType getTransactionType() {
+                return null;
+            }
+
+            @Override
+            public DateTime getEffectiveDate() {
+                return null;
+            }
+
+            @Override
+            public BigDecimal getAmount() {
+                return amount;
+            }
+
+            @Override
+            public Currency getCurrency() {
+                return currency;
+            }
+
+            @Override
+            public BigDecimal getProcessedAmount() {
+                return null;
+            }
+
+            @Override
+            public Currency getProcessedCurrency() {
+                return null;
+            }
+
+            @Override
+            public String getGatewayErrorCode() {
+                return null;
+            }
+
+            @Override
+            public String getGatewayErrorMsg() {
+                return null;
+            }
+
+            @Override
+            public TransactionStatus getTransactionStatus() {
+                return null;
+            }
+
+            @Override
+            public PaymentTransactionInfoPlugin getPaymentInfoPlugin() {
+                return null;
+            }
+
+            @Override
+            public UUID getId() {
+                return null;
+            }
+
+            @Override
+            public DateTime getCreatedDate() {
+                return null;
+            }
+
+            @Override
+            public DateTime getUpdatedDate() {
+                return null;
             }
         };
     }

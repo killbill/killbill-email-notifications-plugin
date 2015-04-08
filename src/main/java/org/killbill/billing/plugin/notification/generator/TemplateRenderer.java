@@ -5,6 +5,7 @@ import org.killbill.billing.account.api.AccountData;
 import org.killbill.billing.entitlement.api.Subscription;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.payment.api.Payment;
+import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateType;
@@ -36,31 +37,30 @@ public class TemplateRenderer {
 
 
     public EmailContent generateEmailForUpComingInvoice(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException {
-        return getEmailContent(TemplateType.UPCOMING_INVOICE, account, null, invoice, context);
+        return getEmailContent(TemplateType.UPCOMING_INVOICE, account, null, invoice, null, context);
     }
 
     public EmailContent generateEmailForSuccessfulPayment(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException {
-        return getEmailContent(TemplateType.SUCCESSFUL_PAYMENT, account, null, invoice, context);
+        return getEmailContent(TemplateType.SUCCESSFUL_PAYMENT, account, null, invoice, null, context);
     }
 
     public EmailContent generateEmailForFailedPayment(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException {
-        return getEmailContent(TemplateType.FAILED_PAYMENT, account, null, invoice, context);
+        return getEmailContent(TemplateType.FAILED_PAYMENT, account, null, invoice, null, context);
     }
 
-    public EmailContent generateEmailForPaymentRefund(final AccountData account, final Payment payment, final TenantContext context) throws IOException {
-        // STEPH TODO
-        return getEmailContent(TemplateType.PAYMENT_REFUND, account, null, null, context);
+    public EmailContent generateEmailForPaymentRefund(final AccountData account, final PaymentTransaction paymentTransaction, final TenantContext context) throws IOException {
+        return getEmailContent(TemplateType.PAYMENT_REFUND, account, null, null, paymentTransaction, context);
     }
 
     public EmailContent generateEmailForSubscriptionCancellationRequested(final AccountData account, final Subscription subscription, final TenantContext context) throws IOException {
-        return getEmailContent(TemplateType.SUBSCRIPTION_CANCELLATION_REQUESTED, account, subscription, null, context);
+        return getEmailContent(TemplateType.SUBSCRIPTION_CANCELLATION_REQUESTED, account, subscription, null, null, context);
     }
 
     public EmailContent generateEmailForSubscriptionCancellationEffective(final AccountData account, final Subscription subscription, final TenantContext context) throws IOException {
-        return getEmailContent(TemplateType.SUBSCRIPTION_CANCELLATION_EFFECTIVE, account, subscription, null, context);
+        return getEmailContent(TemplateType.SUBSCRIPTION_CANCELLATION_EFFECTIVE, account, subscription, null, null, context);
     }
 
-    private EmailContent getEmailContent(final TemplateType templateType, final AccountData account, @Nullable Subscription subscription, @Nullable final Invoice invoice, final TenantContext context) throws IOException {
+    private EmailContent getEmailContent(final TemplateType templateType, final AccountData account, @Nullable Subscription subscription, @Nullable final Invoice invoice, @Nullable final PaymentTransaction paymentTransaction, final TenantContext context) throws IOException {
 
         final String accountLocale = Strings.emptyToNull(account.getLocale());
         final Locale locale = accountLocale == null ? Locale.getDefault() : LocaleUtils.toLocale(accountLocale);
@@ -74,6 +74,9 @@ public class TemplateRenderer {
         }
         if (invoice != null) {
             data.put("invoice", invoice);
+        }
+        if (paymentTransaction != null) {
+            data.put("payment", paymentTransaction);
         }
 
         final String templateText = getTemplateText(locale, templateType, context);

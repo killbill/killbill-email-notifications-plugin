@@ -15,8 +15,8 @@ public class TestEmailSender {
 
     private final Logger log = LoggerFactory.getLogger(TestEmailSender.class);
 
-    private static final String TEST_SMTP_SERVER_NAME = "smt.perver";
-    private static final int TEST_SMPT_SERVER_PORT = 25;
+    private static final String TEST_SMTP_SERVER_NAME = "127.0.0.1";
+    private static final int TEST_SMPT_SERVER_PORT = 2525;
     private static final String TEST_SMTP_USER = "foo";
     private static final String TEST_SMTP_PWD = "bar";
     private static final String TEST_SMTP_FROM = "caramel@mou.com";
@@ -45,8 +45,8 @@ public class TestEmailSender {
             }
         };
 
-        EmailSender sender = new EmailSender(TEST_SMTP_SERVER_NAME, TEST_SMPT_SERVER_PORT, TEST_SMTP_USER, TEST_SMTP_PWD, TEST_SMTP_FROM, true, false, logService);
-        final String to = "<something_that_works>@gmail.com";
-        sender.sendPlainTextEmail(ImmutableList.of(to), null, "coucou", "body");
+        EmailSender sender = new EmailSender(TEST_SMTP_SERVER_NAME, TEST_SMPT_SERVER_PORT, TEST_SMTP_USER, TEST_SMTP_PWD, TEST_SMTP_FROM, true, false, logService, false);
+        final String to = "something_that_works@gmail.com";
+        sender.sendPlainTextEmail(ImmutableList.of(to), ImmutableList.<String>of(), "coucou", "body");
     }
 }

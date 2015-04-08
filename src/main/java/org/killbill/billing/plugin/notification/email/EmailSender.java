@@ -17,7 +17,6 @@
 package org.killbill.billing.plugin.notification.email;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
@@ -41,6 +40,8 @@ public class EmailSender {
     private static final String IS_USE_SSL_PROP = "org.killbill.mail.useSSL";
     private static final String SMTP_FROM_PROP = "org.killbill.mail.from";
 
+    private static final String DEBUG_LOG_ONLY = "org.killbill.billing.plugin.notification.email.logOnly";
+
     private final boolean useSmtpAuth;
     private final int useSmtpPort;
     private final String smtpUserName;
@@ -49,19 +50,21 @@ public class EmailSender {
     private final String from;
     private final boolean useSSL;
     private final LogService logService;
+    private final boolean logOnly;
 
     public EmailSender(final OSGIConfigPropertiesService configProperties, final LogService logService) {
-        this.logService = logService;
-        this.smtpServerName = configProperties.getString(SERVER_NAME_PROP);
-        this.useSmtpPort = configProperties.getString(SERVER_PORT_PROP) != null ? Integer.valueOf(configProperties.getString(SERVER_PORT_PROP)) : 25;
-        this.smtpUserName = configProperties.getString(SMTP_USER_PROP);
-        this.smtpUserPassword = configProperties.getString(SMTP_PWD_PROP);
-        this.from = configProperties.getString(SMTP_FROM_PROP);
-        this.useSSL = configProperties.getString(IS_USE_SSL_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_USE_SSL_PROP)) : false;
-        this.useSmtpAuth = configProperties.getString(IS_SMTP_AUTH_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_SMTP_AUTH_PROP)) : false;
+        this(configProperties.getString(SERVER_NAME_PROP),
+                (configProperties.getString(SERVER_PORT_PROP) != null ? Integer.valueOf(configProperties.getString(SERVER_PORT_PROP)) : 25),
+                configProperties.getString(SMTP_USER_PROP),
+                configProperties.getString(SMTP_PWD_PROP),
+                configProperties.getString(SMTP_FROM_PROP),
+                (configProperties.getString(IS_SMTP_AUTH_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_SMTP_AUTH_PROP)) : false),
+                (configProperties.getString(IS_USE_SSL_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_USE_SSL_PROP)) : false),
+                logService,
+                (configProperties.getString(DEBUG_LOG_ONLY) != null ? Boolean.valueOf(configProperties.getString(DEBUG_LOG_ONLY)) : false));
     }
 
-    public EmailSender(String smtpServerName, int useSmtpPort, String smtpUserName, String smtpUserPassword, String from, boolean useSmtpAuth, boolean useSSL, LogService logService) {
+    public EmailSender(final String smtpServerName, final int useSmtpPort, final String smtpUserName, final String smtpUserPassword, final String from, final boolean useSmtpAuth, final boolean useSSL, final LogService logService, final boolean logOnly) {
         this.useSmtpAuth = useSmtpAuth;
         this.useSmtpPort = useSmtpPort;
         this.smtpUserName = smtpUserName;
@@ -70,6 +73,11 @@ public class EmailSender {
         this.from = from;
         this.useSSL = useSSL;
         this.logService = logService;
+        this.logOnly = logOnly;
+
+        logService.log(LogService.LOG_INFO, String.format("EmailSender configured with serverName = %s, serverPort = %d, from = %s, logOnly = %s",
+                smtpServerName, useSmtpPort, from, logOnly));
+
     }
 
     public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody) throws EmailException {
@@ -92,6 +100,11 @@ public class EmailSender {
     }
 
     private void sendEmail(final List<String> to, final List<String> cc, final String subject, final Email email) throws EmailException {
+
+        if (logOnly) {
+            return;
+        }
+
         email.setSmtpPort(useSmtpPort);
         if (useSmtpAuth) {
             email.setAuthentication(smtpUserName, smtpUserPassword);
