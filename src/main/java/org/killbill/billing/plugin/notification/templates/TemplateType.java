@@ -1,6 +1,7 @@
 package org.killbill.billing.plugin.notification.templates;
 
 
+import org.killbill.billing.plugin.notification.setup.EmailNotificationActivator;
 
 public enum TemplateType {
 
@@ -11,18 +12,23 @@ public enum TemplateType {
     SUBSCRIPTION_CANCELLATION_REQUESTED("SubscriptionCancellationRequested.mustache", "subscriptionCancellationRequestedSubject"),
     SUBSCRIPTION_CANCELLATION_EFFECTIVE("SubscriptionCancellationEffective.mustache", "subscriptionCancellationEffectiveSubject");
 
-    final String templateName;
+    final String defaultTemplateName;
     final String subjectKeyName;
 
     TemplateType(String templateName, String subjectKeyName) {
-        this.templateName = templateName;
+        this.defaultTemplateName = templateName;
         this.subjectKeyName =subjectKeyName;
     }
 
-    public String getTemplateName() {
-        return templateName;
+    public String getDefaultTemplateName() {
+        return defaultTemplateName;
     }
 
+    public String getTemplateKey() {
+        return new StringBuffer(EmailNotificationActivator.PLUGIN_NAME)
+                .append(":")
+                .append(this).toString();
+    }
     public String getSubjectKeyName() {
         return subjectKeyName;
     }

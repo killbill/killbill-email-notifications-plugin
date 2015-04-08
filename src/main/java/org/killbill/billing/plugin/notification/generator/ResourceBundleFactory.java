@@ -1,7 +1,11 @@
 package org.killbill.billing.plugin.notification.generator;
 
 import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
+import org.killbill.billing.plugin.notification.setup.EmailNotificationActivator;
+import org.killbill.billing.plugin.notification.util.LocaleUtils;
+import org.killbill.billing.tenant.api.TenantApiException;
+import org.killbill.billing.tenant.api.TenantKV;
+import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
@@ -21,7 +25,7 @@ public class ResourceBundleFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
 
-    //private final TenantInternalApi tenantApi;
+    private final TenantUserApi tenantApi;
 
     public enum ResourceBundleType {
         TEMPLATE_TRANSLATION("Translation"),
@@ -36,13 +40,22 @@ public class ResourceBundleFactory {
         public String getResourceName() {
             return resourceName;
         }
+
+        public String getTranslationKey() {
+            return new StringBuffer(EmailNotificationActivator.PLUGIN_NAME)
+                    .append(":")
+                    .append(this).toString();
+        }
+
     }
 
 
-    public ResourceBundleFactory() {
+    public ResourceBundleFactory(final TenantUserApi tenantApi) {
+        this.tenantApi = tenantApi;
+
     }
 
-    public ResourceBundle createBundle(final Locale locale, final ResourceBundleType type, final TenantContext tenantContext) {
+    public ResourceBundle createBundle(final Locale locale, final ResourceBundleType type, final TenantContext tenantContext) throws TenantApiException {
         if (tenantContext.getTenantId() == null) {
             return getGlobalBundle(locale, type);
         }
@@ -58,19 +71,27 @@ public class ResourceBundleFactory {
         return getGlobalBundle(locale, type);
     }
 
-    private String getTenantBundleForType(final Locale locale, final ResourceBundleType type, final TenantContext tenantContext) {
+    private String getTenantBundleForType(final Locale locale, final ResourceBundleType type, final TenantContext tenantContext) throws TenantApiException {
+        String tenantKey;
         switch (type) {
             case CATALOG_TRANSLATION:
-                //return tenantApi.getCatalogTranslation(locale, tenantContext);
-
+                tenantKey = LocaleUtils.localeString(locale, TenantKV.TenantKey.CATALOG_TRANSLATION_.name());
+                break;
             case TEMPLATE_TRANSLATION:
-                //return tenantApi.getInvoiceTranslation(locale, tenantContext);
-
+                tenantKey = LocaleUtils.localeString(locale, type.getTranslationKey());
+                break;
             default:
-                //logger.warn("Unexpected bundle type {} ", type);
                 return null;
         }
+        if (tenantKey !=  null) {
+            final List<String> result = tenantApi.getTenantValuesForKey(tenantKey, tenantContext);
+            if (result.size() == 1) {
+                return result.get(0);
+            }
+        }
+        return null;
     }
+
 
     private ResourceBundle getGlobalBundle(final Locale locale, final ResourceBundleType bundleType) {
         final String bundlePath = DEFAULT_TRANSLATION_PATH_PREFIX + bundleType.getResourceName();

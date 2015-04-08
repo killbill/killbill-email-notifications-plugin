@@ -1,5 +1,6 @@
 package org.killbill.billing.plugin.notification.generator;
 
+import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
@@ -30,6 +31,10 @@ import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
+import org.killbill.billing.tenant.api.Tenant;
+import org.killbill.billing.tenant.api.TenantApiException;
+import org.killbill.billing.tenant.api.TenantData;
+import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.testng.Assert;
@@ -51,8 +56,8 @@ public class TestTemplateRenderer {
     @BeforeClass(groups = "fast")
     public void beforeClass() throws Exception {
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
-        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory();
-        renderer = new TemplateRenderer(templateEngine, bundleFactory);
+        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi());
+        renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi());
     }
 
 
@@ -873,6 +878,41 @@ public class TestTemplateRenderer {
             @Override
             public DateTime getUpdatedDate() {
                 return null;
+            }
+        };
+    }
+
+    final TenantUserApi getMockTenantUserApi() {
+        return new TenantUserApi() {
+
+            @Override
+            public Tenant createTenant(TenantData data, CallContext context) throws TenantApiException {
+                return null;
+            }
+
+            @Override
+            public Tenant getTenantByApiKey(String key) throws TenantApiException {
+                return null;
+            }
+
+            @Override
+            public Tenant getTenantById(UUID tenantId) throws TenantApiException {
+                return null;
+            }
+
+            @Override
+            public List<String> getTenantValuesForKey(String key, TenantContext context) throws TenantApiException {
+                return ImmutableList.of();
+            }
+
+            @Override
+            public void addTenantKeyValue(String key, String value, CallContext context) throws TenantApiException {
+
+            }
+
+            @Override
+            public void deleteTenantKey(String key, CallContext context) throws TenantApiException {
+
             }
         };
     }

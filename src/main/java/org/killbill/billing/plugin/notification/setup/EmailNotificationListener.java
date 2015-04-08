@@ -60,6 +60,7 @@ import org.killbill.billing.plugin.notification.generator.ResourceBundleFactory;
 import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateType;
+import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.killbill.killbill.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.killbill.osgi.libs.killbill.OSGIKillbillAPI;
@@ -74,6 +75,7 @@ import javax.print.DocFlavor;
 public class EmailNotificationListener implements OSGIKillbillEventHandler {
 
     private static final String INVOICE_DRY_RUN_TIME_PROPERTY = "org.killbill.invoice.dryRunNotificationSchedule";
+
     private static final NullDryRunArguments NULL_DRY_RUN_ARGUMENTS = new NullDryRunArguments();
 
     private final LogService logService;
@@ -87,6 +89,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             .add(ExtBusEventType.INVOICE_NOTIFICATION)
             .add(ExtBusEventType.INVOICE_CREATION)
             .add(ExtBusEventType.PAYMENT_SUCCESS)
+            .add(ExtBusEventType.PAYMENT_FAILED)
             .add(ExtBusEventType.SUBSCRIPTION_CANCEL)
             .build();
 
@@ -96,7 +99,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         this.osgiKillbillAPI = killbillAPI;
         this.configProperties = configProperties;
         this.emailSender = new EmailSender(configProperties, logService);
-        this.templateRenderer = new TemplateRenderer(new MustacheTemplateEngine(), new ResourceBundleFactory());
+        this.templateRenderer = new TemplateRenderer(new MustacheTemplateEngine(), new ResourceBundleFactory(killbillAPI.getTenantUserApi()), killbillAPI.getTenantUserApi());
     }
 
     @Override
@@ -112,6 +115,11 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
 
         try {
             final Account account = osgiKillbillAPI.getAccountUserApi().getAccountById(killbillEvent.getAccountId(), new EmailNotificationContext(killbillEvent.getTenantId()));
+            final String to = account.getEmail();
+            if (to == null) {
+                logService.log(LogService.LOG_INFO, "Account " + account.getId() + " does not have an email address configured, skip..." );
+                return;
+            }
 
             final EmailNotificationContext context = new EmailNotificationContext(killbillEvent.getTenantId());
             switch(killbillEvent.getEventType()) {
@@ -147,6 +155,8 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (IOException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
+        } catch (TenantApiException e) {
+            logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (IllegalArgumentException e) {
             logService.log(LogService.LOG_WARNING, e.getMessage(), e);
         } finally {
@@ -154,7 +164,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         }
     }
 
-    private void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException {
+    private void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException, TenantApiException {
 
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_NOTIFICATION, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
@@ -172,7 +182,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         }
     }
 
-    private void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException {
+    private void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException, TenantApiException {
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.SUBSCRIPTION_CANCEL, String.format("Unexpected event %s", killbillEvent.getEventType()));
         final UUID subscriptionId = killbillEvent.getObjectId();
 
@@ -185,7 +195,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         }
     }
 
-    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException {
+    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException {
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.PAYMENT_FAILED || killbillEvent.getEventType() == ExtBusEventType.PAYMENT_SUCCESS, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
         final UUID paymentId = killbillEvent.getObjectId();
@@ -223,12 +233,6 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
     }
 
     private void sendEmail(final Account account, final EmailContent emailContent, final TenantContext context) throws IOException, EmailException {
-        final String to = account.getEmail();
-        if (to == null) {
-            logService.log(LogService.LOG_INFO, "Account " + account.getId() + " does not have an email, skip..." );
-            return;
-        }
-
         final Iterable<String> cc = Iterables.transform(osgiKillbillAPI.getAccountUserApi().getEmails(account.getId(), context), new Function<AccountEmail, String>() {
             @Nullable
             @Override
@@ -236,7 +240,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
                 return input.getEmail();
             }
         });
-        emailSender.sendPlainTextEmail(ImmutableList.of(to), ImmutableList.copyOf(cc), emailContent.getSubject(), emailContent.getBody());
+        emailSender.sendPlainTextEmail(ImmutableList.of(account.getEmail()), ImmutableList.copyOf(cc), emailContent.getSubject(), emailContent.getBody());
     }
 
     private static final class EmailNotificationContext implements TenantContext {
