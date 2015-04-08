@@ -17,9 +17,11 @@
 package org.killbill.billing.plugin.notification.email;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
+import org.apache.commons.mail.SimpleEmail;
 import org.killbill.killbill.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.osgi.service.log.LogService;
 
@@ -27,6 +29,8 @@ import java.io.IOException;
 import java.util.List;
 
 public class EmailSender {
+
+    private static final Joiner JOINER_ON_COMMA = Joiner.on(", ");
 
     /* Reuse Kill Bill email properties; if needed we can have a different set for the plugin */
     private static final String SERVER_NAME_PROP = "org.killbill.mail.smtp.host";
@@ -57,6 +61,16 @@ public class EmailSender {
         this.useSmtpAuth = configProperties.getString(IS_SMTP_AUTH_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_SMTP_AUTH_PROP)) : false;
     }
 
+    public EmailSender(String smtpServerName, int useSmtpPort, String smtpUserName, String smtpUserPassword, String from, boolean useSmtpAuth, boolean useSSL, LogService logService) {
+        this.useSmtpAuth = useSmtpAuth;
+        this.useSmtpPort = useSmtpPort;
+        this.smtpUserName = smtpUserName;
+        this.smtpUserPassword = smtpUserPassword;
+        this.smtpServerName = smtpServerName;
+        this.from = from;
+        this.useSSL = useSSL;
+        this.logService = logService;
+    }
 
     public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody) throws EmailException {
         final HtmlEmail email = new HtmlEmail();
@@ -65,6 +79,13 @@ public class EmailSender {
     }
 
     public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body) throws IOException, EmailException {
+
+        logService.log(LogService.LOG_INFO, String.format("Sending email to = %s, cc= %s, subject = %s body = [%s]",
+                to,
+                JOINER_ON_COMMA.join(cc),
+                subject,
+                body));
+
         final SimpleEmail email = new SimpleEmail();
         email.setMsg(body);
         sendEmail(to, cc, subject, email);

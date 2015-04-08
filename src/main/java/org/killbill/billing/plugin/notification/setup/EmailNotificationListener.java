@@ -100,6 +100,10 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             return;
         }
 
+        // TODO see https://github.com/killbill/killbill-platform/issues/5
+        final ClassLoader previousClassLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
+
         try {
             final Account account = osgiKillbillAPI.getAccountUserApi().getAccountById(killbillEvent.getAccountId(), new EmailNotificationContext(killbillEvent.getTenantId()));
 
@@ -140,6 +144,8 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (IllegalArgumentException e) {
             logService.log(LogService.LOG_WARNING, e.getMessage(), e);
+        } finally {
+            Thread.currentThread().setContextClassLoader(previousClassLoader);
         }
     }
 
@@ -192,7 +198,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         Preconditions.checkArgument(invoicePayments != null && invoicePayments.size() == 1, String.format("Unexpected number of invoices %d for payment %s",
                 (invoicePayments == null ? 0 : invoicePayments.size()), paymentId));
 
-        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(invoicePayments.get(0).getId(), context);
+        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(invoicePayments.get(0).getInvoiceId(), context);
         if (invoice != null) {
             final EmailContent emailContent = success ?
                     templateRenderer.generateEmailForSuccessfulPayment(account, invoice, context) :

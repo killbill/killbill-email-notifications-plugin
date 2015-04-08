@@ -148,7 +148,19 @@
                         <Export-Package />
                         <Private-Package>org.killbill.billing.plugin.notification.*</Private-Package>
                         <!-- Optional resolution because exported by the Felix system bundle -->
-                        <Import-Package>*;resolution:=optional</Import-Package>
+                        <Import-Package>
+                            javax.annotation;
+                            javax.activation;
+                            javax.naming.directory;
+                            javax.naming.event;
+                            javax.naming.ldap;
+                            javax.naming.spi;
+                            javax.naming;
+                            javax.net;
+                            javax.net.ssl;
+                            version="[0,3)",
+                            *;resolution:=optional
+                        </Import-Package>
                     </instructions>
                 </configuration>
                 <executions>
