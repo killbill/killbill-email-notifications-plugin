@@ -16,7 +16,6 @@
 #                                                                                 #
 ###################################################################################
 # Prepare a release:
-#   * Update the NEWS file
 #   * Commit all pending changes
 #   * Do the release
 set -e
@@ -24,7 +23,6 @@ set -e
 # Make sure we're up-to-date
 git pull
 
-LAST_NEWS_VERSION=$(head -1 NEWS)
 NEXT_VERSION=`grep -E '<version>([0-9]+\.[0-9]+\.[0-9]+)-SNAPSHOT</version>' pom.xml | sed 's/[\t \n]*<version>\(.*\)-SNAPSHOT<\/version>[\t \n]*/\1/'`
 
 # Make sure we can push before the release
