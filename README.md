@@ -23,8 +23,8 @@ The plugin can be ran on a set of Kill Bill multi-tenant instances. The various 
 
 The following Kill Bill endpoints can be used to upload the templates:
 
-* Upload a new per-tenant template for a specific locale: POST /1.0/kb/tenants/userKeyValue/<KEY_NAME>
-* Retrieve a new per-tenant template for a specific locale: GET /1.0/kb/tenants/userKeyValue/<KEY_NAME>
-* Delete a new per-tenant template for a specific locale: DELETE /1.0/kb/tenants/userKeyValue/<KEY_NAME>
+* Upload a new per-tenant template for a specific locale: `POST /1.0/kb/tenants/userKeyValue/<KEY_NAME>`
+* Retrieve a new per-tenant template for a specific locale: `GET /1.0/kb/tenants/userKeyValue/<KEY_NAME>`
+* Delete a new per-tenant template for a specific locale: `DELETE /1.0/kb/tenants/userKeyValue/<KEY_NAME>`
 
 Currently, there is no caching for this templates within Kill Bill, but the plugin *could* cache those, but then multi-node scenario requiring cache invalidation require some great care.
