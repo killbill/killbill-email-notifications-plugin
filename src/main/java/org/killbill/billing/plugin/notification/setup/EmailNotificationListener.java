@@ -195,10 +195,15 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         }
     }
 
+
     private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException {
-        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.PAYMENT_FAILED || killbillEvent.getEventType() == ExtBusEventType.PAYMENT_SUCCESS, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
         final UUID paymentId = killbillEvent.getObjectId();
+        if (paymentId == null) {
+            return;
+        }
+
+        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.PAYMENT_FAILED || killbillEvent.getEventType() == ExtBusEventType.PAYMENT_SUCCESS, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
         final Payment payment = osgiKillbillAPI.getPaymentApi().getPayment(paymentId, false, ImmutableList.<PluginProperty>of(), context);
         final PaymentTransaction lastTransaction = payment.getTransactions().get(payment.getTransactions().size() - 1);
