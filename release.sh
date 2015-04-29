@@ -23,7 +23,7 @@ set -e
 # Make sure we're up-to-date
 git pull
 
-NEXT_VERSION=`grep -E '<version>([0-9]+\.[0-9]+\.[0-9]+)-SNAPSHOT</version>' pom.xml | sed 's/[\t \n]*<version>\(.*\)-SNAPSHOT<\/version>[\t \n]*/\1/'`
+NEXT_VERSION=`grep -E '<version>([0-9]+\.[0-9]+(\.[0-9]+)?)-SNAPSHOT</version>' pom.xml | sed 's/[\t \n]*<version>\(.*\)-SNAPSHOT<\/version>[\t \n]*/\1/'`
 
 # Make sure we can push before the release
 git push
@@ -34,6 +34,4 @@ mvn release:clean && \
 echo "Running: mvn release:prepare" && \
 mvn release:prepare && \
 echo "Running: mvn release:perform" && \
-mvn release:perform && \
-echo "Running mvn nexus-staging:release -Psonatype-oss-release" && \
-cd target/checkout ; mvn nexus-staging:release -Psonatype-oss-release
+mvn release:perform
