@@ -17,13 +17,8 @@
 
 package org.killbill.billing.plugin.notification.setup;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
-
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import org.apache.commons.mail.EmailException;
@@ -31,17 +26,16 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.killbill.billing.account.api.Account;
 import org.killbill.billing.account.api.AccountApiException;
-import org.killbill.billing.account.api.AccountData;
 import org.killbill.billing.account.api.AccountEmail;
 import org.killbill.billing.catalog.api.BillingActionPolicy;
 import org.killbill.billing.catalog.api.PlanPhasePriceOverride;
 import org.killbill.billing.catalog.api.PlanPhaseSpecifier;
 import org.killbill.billing.entitlement.api.Entitlement;
-import org.killbill.billing.entitlement.api.EntitlementApiException;
 import org.killbill.billing.entitlement.api.Subscription;
 import org.killbill.billing.entitlement.api.SubscriptionApiException;
 import org.killbill.billing.entitlement.api.SubscriptionEventType;
 import org.killbill.billing.invoice.api.DryRunArguments;
+import org.killbill.billing.invoice.api.DryRunType;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceApiException;
 import org.killbill.billing.invoice.api.InvoicePayment;
@@ -58,18 +52,20 @@ import org.killbill.billing.plugin.notification.email.EmailSender;
 import org.killbill.billing.plugin.notification.generator.ResourceBundleFactory;
 import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
-import org.killbill.billing.plugin.notification.templates.TemplateType;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.killbill.killbill.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.killbill.osgi.libs.killbill.OSGIKillbillAPI;
+import org.killbill.killbill.osgi.libs.killbill.OSGIKillbillClock;
 import org.killbill.killbill.osgi.libs.killbill.OSGIKillbillEventDispatcher.OSGIKillbillEventHandler;
 import org.killbill.killbill.osgi.libs.killbill.OSGIKillbillLogService;
 import org.osgi.service.log.LogService;
 import org.skife.config.TimeSpan;
 
 import javax.annotation.Nullable;
-import javax.print.DocFlavor;
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
 
 public class EmailNotificationListener implements OSGIKillbillEventHandler {
 
@@ -82,6 +78,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
     private final TemplateRenderer templateRenderer;
     private final OSGIConfigPropertiesService configProperties;
     private final EmailSender emailSender;
+    private final OSGIKillbillClock clock;
 
 
     private final ImmutableList<ExtBusEventType> EVENTS_TO_CONSIDER = new ImmutableList.Builder()
@@ -93,10 +90,11 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             .build();
 
 
-    public EmailNotificationListener(final OSGIKillbillLogService logService, final OSGIKillbillAPI killbillAPI, final OSGIConfigPropertiesService configProperties) {
+    public EmailNotificationListener(final OSGIKillbillClock clock, final OSGIKillbillLogService logService, final OSGIKillbillAPI killbillAPI, final OSGIConfigPropertiesService configProperties) {
         this.logService = logService;
         this.osgiKillbillAPI = killbillAPI;
         this.configProperties = configProperties;
+        this.clock = clock;
         this.emailSender = new EmailSender(configProperties, logService);
         this.templateRenderer = new TemplateRenderer(new MustacheTemplateEngine(), new ResourceBundleFactory(killbillAPI.getTenantUserApi(), logService), killbillAPI.getTenantUserApi(), logService);
     }
@@ -116,12 +114,12 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             final Account account = osgiKillbillAPI.getAccountUserApi().getAccountById(killbillEvent.getAccountId(), new EmailNotificationContext(killbillEvent.getTenantId()));
             final String to = account.getEmail();
             if (to == null) {
-                logService.log(LogService.LOG_INFO, "Account " + account.getId() + " does not have an email address configured, skip..." );
+                logService.log(LogService.LOG_INFO, "Account " + account.getId() + " does not have an email address configured, skip...");
                 return;
             }
 
             final EmailNotificationContext context = new EmailNotificationContext(killbillEvent.getTenantId());
-            switch(killbillEvent.getEventType()) {
+            switch (killbillEvent.getEventType()) {
                 case INVOICE_NOTIFICATION:
                     sendEmailForUpComingInvoice(account, killbillEvent, context);
                     break;
@@ -140,7 +138,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             }
 
             logService.log(LogService.LOG_INFO, String.format("Received event %s for object type = %s, id = %s",
-                    killbillEvent.getEventType(),killbillEvent.getObjectType(), killbillEvent.getObjectId()));
+                    killbillEvent.getEventType(), killbillEvent.getObjectType(), killbillEvent.getObjectId()));
 
         } catch (final AccountApiException e) {
             logService.log(LogService.LOG_WARNING, String.format("Unable to find account: %s", killbillEvent.getAccountId()), e);
@@ -171,10 +169,12 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         Preconditions.checkArgument(dryRunTimePropValue != null, String.format("Cannot find property %s", INVOICE_DRY_RUN_TIME_PROPERTY));
 
         final TimeSpan span = new TimeSpan(dryRunTimePropValue);
-        final DateTime targetDateTime = new DateTime(account.getTimeZone()).plus(span.getMillis());
 
-        final PluginCallContext callContext = new PluginCallContext(EmailNotificationActivator.PLUGIN_NAME, new DateTime(), context.getTenantId());
-        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerInvoiceGeneration(account.getId(), targetDateTime.toLocalDate(), NULL_DRY_RUN_ARGUMENTS, callContext);
+        final DateTime now = clock.getClock().getUTCNow();
+        final DateTime targetDateTime = now.plus(span.getMillis());
+
+        final PluginCallContext callContext = new PluginCallContext(EmailNotificationActivator.PLUGIN_NAME, now, context.getTenantId());
+        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerInvoiceGeneration(account.getId(), new LocalDate(targetDateTime, account.getTimeZone()), NULL_DRY_RUN_ARGUMENTS, callContext);
         if (invoice != null) {
             final EmailContent emailContent = templateRenderer.generateEmailForUpComingInvoice(account, invoice, context);
             sendEmail(account, emailContent, context);
@@ -263,31 +263,42 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
 
     private final static class NullDryRunArguments implements DryRunArguments {
         @Override
+        public DryRunType getDryRunType() {
+            return null;
+        }
+
+        @Override
         public PlanPhaseSpecifier getPlanPhaseSpecifier() {
             return null;
         }
+
         @Override
         public SubscriptionEventType getAction() {
             return null;
         }
+
         @Override
         public UUID getSubscriptionId() {
             return null;
         }
+
         @Override
         public DateTime getEffectiveDate() {
             return null;
         }
+
         @Override
         public UUID getBundleId() {
             return null;
         }
+
         @Override
         public BillingActionPolicy getBillingActionPolicy() {
             return null;
         }
+
         @Override
-        public List<PlanPhasePriceOverride> getPlanPhasePriceoverrides() {
+        public List<PlanPhasePriceOverride> getPlanPhasePriceOverrides() {
             return null;
         }
     }

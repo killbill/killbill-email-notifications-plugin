@@ -33,15 +33,15 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
 
     public static final String PLUGIN_NAME = "killbill-email-notifications";
 
-    private OSGIKillbillEventHandler analyticsListener;
+    private OSGIKillbillEventHandler emailNotificationListener;
 
     @Override
     public void start(final BundleContext context) throws Exception {
         super.start(context);
 
         // Register an event listener (optional)
-        analyticsListener = new EmailNotificationListener(logService, killbillAPI, configProperties);
-        dispatcher.registerEventHandler(analyticsListener);
+        emailNotificationListener = new EmailNotificationListener(clock, logService, killbillAPI, configProperties);
+        dispatcher.registerEventHandler(emailNotificationListener);
 
 
         // Register a servlet (optional)
@@ -58,7 +58,7 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
 
     @Override
     public OSGIKillbillEventHandler getOSGIKillbillEventHandler() {
-        return analyticsListener;
+        return emailNotificationListener;
     }
 
     private void registerServlet(final BundleContext context, final HttpServlet servlet) {
