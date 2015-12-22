@@ -1,4 +1,4 @@
-= killbill-email-notifications-plugin
+# killbill-email-notifications-plugin
 
 Release builds are available on [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.kill-bill.billing.plugin.java%22%20AND%20a%3A%22killbill-email-notifications-plugin%22) with coordinates `org.kill-bill.billing.plugin.java:killbill-email-notifications-plugin`.
 
@@ -10,7 +10,7 @@ Kill Bill compatibility
 | 0.1.y          | 0.14.z            |
 | 0.2.y          | 0.16.z            |
 
-== Overview
+## Overview
 
 The plugin will listen to specific system bus events and notify customers through emails. The following events are currently processed and emails are sent to all the emails associated with the account:
 
@@ -21,9 +21,9 @@ The plugin will listen to specific system bus events and notify customers throug
 * Subscription Cancellation: the customer will receive an email at the time a subscription was requested to be canceled
 * Subscription Cancellation: the customer will receive an email at the effective date of the subscription cancellation
 
-== Multi-tenancy Configuration
+## Multi-tenancy Configuration
 
-=== Supported Keys And Resources
+### Supported Keys And Resources
 
 The plugin can be ran on a set of Kill Bill multi-tenant instances. The various templates and translation files can be uploaded on a per tenant basis using the following keys (for instance with a Locale `en_US`):
 
@@ -44,11 +44,12 @@ The following Kill Bill endpoints can be used to upload the templates:
 
 Currently, there is no caching for these templates within Kill Bill, but the plugin *could* cache those (but then the multi-node scenario requires some great care with respect to cache invalidation).
 
-=== CURL Examples
+### CURL Examples
 
 For instnace to upload a template for the next upcoming invoice and for a locale `en_US`:
 
-1. Create the template:
+1. Create the template `/tmp/UpcomingInvoice.mustache`:
+
   ```
 *** You Have a New Invoice ***
 
