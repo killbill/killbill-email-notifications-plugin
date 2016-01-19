@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2015-2016 Groupon, Inc
+ * Copyright 2015-2016 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -69,6 +69,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public class TestTemplateRenderer {
@@ -102,14 +103,13 @@ public class TestTemplateRenderer {
         renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi(), logService);
     }
 
-
     @Test(groups = "fast")
-    public void testSuccessfulPayment() throws Exception {
+    public void testSuccessfulPaymentUSD() throws Exception {
 
         final AccountData account = createAccount();
         final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
-        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), "chocolate-monthly"));
-        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.55"), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), account.getCurrency(), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.55"), account.getCurrency(), "chocolate-monthly"));
         final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
 
         final TenantContext tenantContext = createTenantContext();
@@ -122,11 +122,50 @@ public class TestTemplateRenderer {
                 "Invoice #: 234\n" +
                 "Payment Date: 2015-04-06\n" +
                 "\n" +
-                "2015-04-06 chocolate-monthly : USD 123.45\n" +
-                "2015-04-06 chocolate-monthly : USD 7.55\n" +
+                "2015-04-06 chocolate-monthly : $123.45\n" +
+                "2015-04-06 chocolate-monthly : $7.55\n" +
                 "\n" +
-                "Paid:  131.00\n" +
-                "Total: 0\n" +
+                "Paid:  $131.00\n" +
+                "Total: $0.00\n" +
+                "\n" +
+                "Billed To::\n" +
+                "SauvonsLaTerre\n" +
+                "Sylvie Dupond\n" +
+                "1234 Trumpet street\n" +
+                "San Francisco, CA 94110\n" +
+                "USA\n" +
+                "\n" +
+                "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
+
+        //System.err.println(email.getBody());
+        Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Payment Confirmation");
+        Assert.assertEquals(email.getBody(), expectedBody);
+    }
+
+    @Test(groups = "fast")
+    public void testSuccessfulPaymentGBP() throws Exception {
+
+        final AccountData account = createAccount(Currency.GBP, "en_GB");
+        final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), account.getCurrency(), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.55"), account.getCurrency(), "chocolate-monthly"));
+        final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
+
+        final TenantContext tenantContext = createTenantContext();
+        final EmailContent email = renderer.generateEmailForSuccessfulPayment(account, invoice, tenantContext);
+
+        final String expectedBody = "This email confirms your recent payment.\n" +
+                "\n" +
+                "Here are the details of your payment:\n" +
+                "\n" +
+                "Invoice #: 234\n" +
+                "Payment Date: 2015-04-06\n" +
+                "\n" +
+                "2015-04-06 chocolate-monthly : £123.45\n" +
+                "2015-04-06 chocolate-monthly : £7.55\n" +
+                "\n" +
+                "Paid:  £131.00\n" +
+                "Total: £0.00\n" +
                 "\n" +
                 "Billed To::\n" +
                 "SauvonsLaTerre\n" +
@@ -147,8 +186,8 @@ public class TestTemplateRenderer {
 
         final AccountData account = createAccount();
         final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
-        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), "chocolate-monthly"));
-        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.55"), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), account.getCurrency(), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.55"), account.getCurrency(), "chocolate-monthly"));
         final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
 
         final TenantContext tenantContext = createTenantContext();
@@ -161,11 +200,11 @@ public class TestTemplateRenderer {
                 "Invoice #: 234\n" +
                 "Payment Date: 2015-04-06\n" +
                 "\n" +
-                "2015-04-06 chocolate-monthly : USD 123.45\n" +
-                "2015-04-06 chocolate-monthly : USD 7.55\n" +
+                "2015-04-06 chocolate-monthly : $123.45\n" +
+                "2015-04-06 chocolate-monthly : $7.55\n" +
                 "\n" +
-                "Paid:  131.00\n" +
-                "Total: 0\n" +
+                "Paid:  $131.00\n" +
+                "Total: $0.00\n" +
                 "\n" +
                 "\n" +
                 "Billed To::\n" +
@@ -187,19 +226,17 @@ public class TestTemplateRenderer {
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
-
     @Test(groups = "fast")
-    public void testPaymentrefund() throws Exception {
-
+    public void testPaymentRefund() throws Exception {
         final AccountData account = createAccount();
-        final PaymentTransaction paymentTransaction = createPaymentTransaction(BigDecimal.TEN, Currency.USD);
+        final PaymentTransaction paymentTransaction = createPaymentTransaction(new BigDecimal("937.070000000"), Currency.USD);
 
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForPaymentRefund(account, paymentTransaction, tenantContext);
 
         final String expectedBody = "*** Your payment has been refunded ***\n" +
                 "\n" +
-                "We have processed a refund in the amount of USD 10.\n" +
+                "We have processed a refund in the amount of $937.07.\n" +
                 "\n" +
                 "This refund will appear on your next credit card statement in approximately 3-5 business days.\n" +
                 "\n" +
@@ -208,9 +245,7 @@ public class TestTemplateRenderer {
         // System.err.println(email.getBody());
         Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Refund Receipt");
         Assert.assertEquals(email.getBody(), expectedBody);
-
     }
-
 
     @Test(groups = "fast")
     public void testSubscriptionCancellationRequested() throws Exception {
@@ -268,8 +303,8 @@ public class TestTemplateRenderer {
 
         final AccountData account = createAccount();
         final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
-        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), "chocolate-monthly"));
-        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.55"), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), account.getCurrency(), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.5500"), account.getCurrency(), "chocolate-monthly"));
         final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
 
         final TenantContext tenantContext = createTenantContext();
@@ -279,10 +314,10 @@ public class TestTemplateRenderer {
                 "\n" +
                 "You have a new invoice from MERCHANT_NAME, due on 2015-04-06.\n" +
                 "\n" +
-                "2015-04-06 chocolate-monthly : USD 123.45\n" +
-                "2015-04-06 chocolate-monthly : USD 7.55\n" +
+                "2015-04-06 chocolate-monthly : $123.45\n" +
+                "2015-04-06 chocolate-monthly : $7.55\n" +
                 "\n" +
-                "Total: 0\n" +
+                "Total: $0.00\n" +
                 "\n" +
                 "Billed To::\n" +
                 "SauvonsLaTerre\n" +
@@ -511,7 +546,7 @@ public class TestTemplateRenderer {
     }
 
 
-    private InvoiceItem createInvoiceItem(final InvoiceItemType type, final LocalDate startDate, final BigDecimal amount, final String planName) {
+    private InvoiceItem createInvoiceItem(final InvoiceItemType type, final LocalDate startDate, final BigDecimal amount, final Currency currency, final String planName) {
         return new InvoiceItem() {
             @Override
             public InvoiceItemType getInvoiceItemType() {
@@ -545,7 +580,7 @@ public class TestTemplateRenderer {
 
             @Override
             public Currency getCurrency() {
-                return null;
+                return currency;
             }
 
             @Override
@@ -736,6 +771,10 @@ public class TestTemplateRenderer {
     }
 
     private AccountData createAccount() {
+        return createAccount(Currency.USD, "en_US");
+    }
+
+    private AccountData createAccount(final Currency currency, final String locale) {
 
         return new AccountData() {
             @Override
@@ -765,7 +804,7 @@ public class TestTemplateRenderer {
 
             @Override
             public Currency getCurrency() {
-                return Currency.USD;
+                return currency;
             }
 
             @Override
@@ -780,7 +819,7 @@ public class TestTemplateRenderer {
 
             @Override
             public String getLocale() {
-                return "en_US";
+                return locale;
             }
 
             @Override

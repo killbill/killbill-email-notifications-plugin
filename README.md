@@ -56,10 +56,10 @@ For instnace to upload a template for the next upcoming invoice and for a locale
 You have a new invoice from {{text.merchantName}}, due on {{invoice.targetDate}}.
 
 {{#invoice.invoiceItems}}
-{{startDate}} {{planName}} : {{invoice.currency}} {{amount}}
+{{startDate}} {{planName}} : {{invoice.formattedAmount}}
 {{/invoice.invoiceItems}}
 
-{{text.invoiceAmountTotal}}: {{invoice.balance}}
+{{text.invoiceAmountTotal}}: {{invoice.formattedBalance}}
 
 {{text.billedTo}}:
 {{account.companyName}}

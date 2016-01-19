@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2015-2016 Groupon, Inc
+ * Copyright 2015-2016 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -21,8 +21,11 @@ import com.google.common.base.Strings;
 import org.killbill.billing.account.api.AccountData;
 import org.killbill.billing.entitlement.api.Subscription;
 import org.killbill.billing.invoice.api.Invoice;
+import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.plugin.notification.email.EmailContent;
+import org.killbill.billing.plugin.notification.generator.formatters.DefaultInvoiceFormatter;
+import org.killbill.billing.plugin.notification.generator.formatters.PaymentFormatter;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateType;
 import org.killbill.billing.plugin.notification.util.IOUtils;
@@ -45,7 +48,6 @@ import java.util.ResourceBundle;
 public class TemplateRenderer {
 
     private final String DEFAULT_TEMPLATE_PATH_PREFIX = "org/killbill/billing/plugin/notification/templates/";
-
 
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;
@@ -100,10 +102,12 @@ public class TemplateRenderer {
             data.put("subscription", subscription);
         }
         if (invoice != null) {
-            data.put("invoice", invoice);
+            final InvoiceFormatter formattedInvoice = new DefaultInvoiceFormatter(text, invoice, locale);
+            data.put("invoice", formattedInvoice);
         }
         if (paymentTransaction != null) {
-            data.put("payment", paymentTransaction);
+            final PaymentFormatter formattedPayment = new PaymentFormatter(paymentTransaction, locale);
+            data.put("payment", formattedPayment);
         }
 
         final String templateText = getTemplateText(locale, templateType, context);

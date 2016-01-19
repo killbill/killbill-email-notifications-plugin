@@ -3,10 +3,10 @@
 You have a new invoice from {{text.merchantName}}, due on {{invoice.targetDate}}.
 
 {{#invoice.invoiceItems}}
-{{startDate}} {{planName}} : {{invoice.currency}} {{amount}}
+{{startDate}} {{planName}} : {{formattedAmount}}
 {{/invoice.invoiceItems}}
 
-{{text.invoiceAmountTotal}}: {{invoice.balance}}
+{{text.invoiceAmountTotal}}: {{invoice.formattedBalance}}
 
 {{text.billedTo}}:
 {{account.companyName}}
