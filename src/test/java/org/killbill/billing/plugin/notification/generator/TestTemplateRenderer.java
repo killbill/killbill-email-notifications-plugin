@@ -357,6 +357,11 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public PriceList getPriceList() {
+                return null;
+            }
+
+            @Override
             public String getName() {
                 return planName;
             }

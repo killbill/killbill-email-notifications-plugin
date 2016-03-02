@@ -86,8 +86,8 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
     private final ImmutableList<ExtBusEventType> EVENTS_TO_CONSIDER = new ImmutableList.Builder()
             .add(ExtBusEventType.INVOICE_NOTIFICATION)
             .add(ExtBusEventType.INVOICE_CREATION)
-            .add(ExtBusEventType.PAYMENT_SUCCESS)
-            .add(ExtBusEventType.PAYMENT_FAILED)
+            .add(ExtBusEventType.INVOICE_PAYMENT_SUCCESS)
+            .add(ExtBusEventType.INVOICE_PAYMENT_FAILED)
             .add(ExtBusEventType.SUBSCRIPTION_CANCEL)
             .build();
 
@@ -126,8 +126,8 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
                     sendEmailForUpComingInvoice(account, killbillEvent, context);
                     break;
 
-                case PAYMENT_SUCCESS:
-                case PAYMENT_FAILED:
+                case INVOICE_PAYMENT_SUCCESS:
+                case INVOICE_PAYMENT_FAILED:
                     sendEmailForPayment(account, killbillEvent, context);
                     break;
 
@@ -160,9 +160,6 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             logService.log(LogService.LOG_WARNING, e.getMessage(), e);
         } catch (MustacheException e) {
             logService.log(LogService.LOG_WARNING, e.getMessage(), e);
-        } catch (RaceConditionException e) {
-            logService.log(LogService.LOG_WARNING, String.format("Race condition detected for event %s", killbillEvent), e);
-            throw new RuntimeException(e);
         } finally {
             Thread.currentThread().setContextClassLoader(previousClassLoader);
         }
@@ -202,16 +199,18 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
     }
 
 
-    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException, RaceConditionException {
-
-        final UUID paymentId = killbillEvent.getObjectId();
-        if (paymentId == null) {
+    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException {
+        final UUID invoiceId = killbillEvent.getObjectId();
+        if (invoiceId == null) {
             return;
         }
 
-        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.PAYMENT_FAILED || killbillEvent.getEventType() == ExtBusEventType.PAYMENT_SUCCESS, String.format("Unexpected event %s", killbillEvent.getEventType()));
+        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_PAYMENT_FAILED || killbillEvent.getEventType() == ExtBusEventType.INVOICE_PAYMENT_SUCCESS, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
-        final Payment payment = osgiKillbillAPI.getPaymentApi().getPayment(paymentId, false, ImmutableList.<PluginProperty>of(), context);
+        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(invoiceId, context);
+        final InvoicePayment invoicePayment = invoice.getPayments().get(invoice.getNumberOfPayments() - 1);
+
+        final Payment payment = osgiKillbillAPI.getPaymentApi().getPayment(invoicePayment.getPaymentId(), false, ImmutableList.<PluginProperty>of(), context);
         final PaymentTransaction lastTransaction = payment.getTransactions().get(payment.getTransactions().size() - 1);
 
         if (lastTransaction.getTransactionType() != TransactionType.PURCHASE &&
@@ -224,24 +223,10 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         if (lastTransaction.getTransactionType() == TransactionType.REFUND && lastTransaction.getTransactionStatus() == TransactionStatus.SUCCESS) {
             emailContent = templateRenderer.generateEmailForPaymentRefund(account, lastTransaction, context);
         } else {
-            final List<InvoicePayment> invoicePayments = osgiKillbillAPI.getInvoicePaymentApi().getInvoicePayments(paymentId, context);
-
-            // See https://github.com/killbill/killbill-email-notifications-plugin/issues/4
-            if (invoicePayments != null && invoicePayments.size() == 0) {
-                throw new RaceConditionException();
-            }
-
-            // KB does not support payments spanning across multiple invoices
-            Preconditions.checkArgument(invoicePayments != null && invoicePayments.size() == 1, String.format("Unexpected number of invoices %d for payment %s",
-                    (invoicePayments == null ? 0 : invoicePayments.size()), paymentId));
-
-            final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(invoicePayments.get(invoicePayments.size() - 1).getInvoiceId(), context);
-            if (invoice != null) {
-                if (lastTransaction.getTransactionType() == TransactionType.PURCHASE && lastTransaction.getTransactionStatus() == TransactionStatus.SUCCESS) {
-                    emailContent = templateRenderer.generateEmailForSuccessfulPayment(account, invoice, context);
-                } else if (lastTransaction.getTransactionType() == TransactionType.PURCHASE && lastTransaction.getTransactionStatus() == TransactionStatus.PAYMENT_FAILURE) {
-                    emailContent = templateRenderer.generateEmailForFailedPayment(account, invoice, context);
-                }
+            if (lastTransaction.getTransactionType() == TransactionType.PURCHASE && lastTransaction.getTransactionStatus() == TransactionStatus.SUCCESS) {
+                emailContent = templateRenderer.generateEmailForSuccessfulPayment(account, invoice, context);
+            } else if (lastTransaction.getTransactionType() == TransactionType.PURCHASE && lastTransaction.getTransactionStatus() == TransactionStatus.PAYMENT_FAILURE) {
+                emailContent = templateRenderer.generateEmailForFailedPayment(account, invoice, context);
             }
         }
         if (emailContent != null) {
@@ -296,7 +281,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         }
 
         @Override
-        public DateTime getEffectiveDate() {
+        public LocalDate getEffectiveDate() {
             return null;
         }
 
@@ -315,6 +300,4 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             return null;
         }
     }
-
-    private static final class RaceConditionException extends Exception {}
 }
