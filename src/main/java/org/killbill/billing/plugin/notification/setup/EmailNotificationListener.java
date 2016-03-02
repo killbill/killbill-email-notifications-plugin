@@ -21,6 +21,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.samskivert.mustache.MustacheException;
+
 import org.apache.commons.mail.EmailException;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
@@ -155,6 +157,8 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         } catch (TenantApiException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (IllegalArgumentException e) {
+            logService.log(LogService.LOG_WARNING, e.getMessage(), e);
+        } catch (MustacheException e) {
             logService.log(LogService.LOG_WARNING, e.getMessage(), e);
         } finally {
             Thread.currentThread().setContextClassLoader(previousClassLoader);
