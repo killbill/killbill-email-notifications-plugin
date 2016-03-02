@@ -160,6 +160,9 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             logService.log(LogService.LOG_WARNING, e.getMessage(), e);
         } catch (MustacheException e) {
             logService.log(LogService.LOG_WARNING, e.getMessage(), e);
+        } catch (RaceConditionException e) {
+            logService.log(LogService.LOG_WARNING, String.format("Race condition detected for event %s", killbillEvent), e);
+            throw new RuntimeException(e);
         } finally {
             Thread.currentThread().setContextClassLoader(previousClassLoader);
         }
@@ -199,7 +202,7 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
     }
 
 
-    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException {
+    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException, RaceConditionException {
 
         final UUID paymentId = killbillEvent.getObjectId();
         if (paymentId == null) {
@@ -222,6 +225,12 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
             emailContent = templateRenderer.generateEmailForPaymentRefund(account, lastTransaction, context);
         } else {
             final List<InvoicePayment> invoicePayments = osgiKillbillAPI.getInvoicePaymentApi().getInvoicePayments(paymentId, context);
+
+            // See https://github.com/killbill/killbill-email-notifications-plugin/issues/4
+            if (invoicePayments != null && invoicePayments.size() == 0) {
+                throw new RaceConditionException();
+            }
+
             // KB does not support payments spanning across multiple invoices
             Preconditions.checkArgument(invoicePayments != null && invoicePayments.size() == 1, String.format("Unexpected number of invoices %d for payment %s",
                     (invoicePayments == null ? 0 : invoicePayments.size()), paymentId));
@@ -307,4 +316,5 @@ public class EmailNotificationListener implements OSGIKillbillEventHandler {
         }
     }
 
+    private static final class RaceConditionException extends Exception {}
 }
