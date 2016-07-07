@@ -41,6 +41,7 @@ import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.api.InvoiceItemType;
 import org.killbill.billing.invoice.api.InvoicePayment;
+import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.payment.api.TransactionStatus;
@@ -357,6 +358,11 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public PriceList getPriceList() {
+                return null;
+            }
+
+            @Override
             public String getName() {
                 return planName;
             }
@@ -387,7 +393,7 @@ public class TestTemplateRenderer {
             }
 
             @Override
-            public Date getEffectiveDateForExistingSubscriptons() {
+            public Date getEffectiveDateForExistingSubscriptions() {
                 return null;
             }
 
@@ -488,6 +494,11 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public Integer getBillCycleDayLocal() {
+                return null;
+            }
+
+            @Override
             public Entitlement cancelEntitlementWithDate(LocalDate effectiveDate, boolean overrideBillingEffectiveDate, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
                 return null;
             }
@@ -527,6 +538,11 @@ public class TestTemplateRenderer {
                 return null;
             }
 
+            @Override
+            public void updateBCD(int bcd, LocalDate effectiveFromDate, CallContext context) throws EntitlementApiException {
+
+            }
+
 
             @Override
             public UUID getId() {
@@ -560,6 +576,11 @@ public class TestTemplateRenderer {
 
             @Override
             public UUID getAccountId() {
+                return null;
+            }
+
+            @Override
+            public UUID getChildAccountId() {
                 return null;
             }
 
@@ -754,6 +775,16 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public InvoiceStatus getStatus() {
+                return null;
+            }
+
+            @Override
+            public boolean isParentInvoice() {
+                return false;
+            }
+
+            @Override
             public UUID getId() {
                 return null;
             }
@@ -870,6 +901,16 @@ public class TestTemplateRenderer {
             @Override
             public Boolean isNotifiedForInvoices() {
                 return true;
+            }
+
+            @Override
+            public UUID getParentAccountId() {
+                return null;
+            }
+
+            @Override
+            public Boolean isPaymentDelegatedToParent() {
+                return null;
             }
         };
     }

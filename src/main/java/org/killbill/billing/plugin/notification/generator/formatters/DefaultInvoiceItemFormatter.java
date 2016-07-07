@@ -111,6 +111,11 @@ public class DefaultInvoiceItemFormatter implements InvoiceItemFormatter {
     }
 
     @Override
+    public UUID getChildAccountId() {
+        return item.getChildAccountId();
+    }
+
+    @Override
     public UUID getBundleId() {
         return item.getBundleId();
     }

@@ -23,17 +23,17 @@ import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 
 import org.killbill.billing.osgi.api.OSGIPluginProperties;
+import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
+import org.killbill.billing.osgi.libs.killbill.OSGIKillbillEventDispatcher;
 import org.killbill.billing.payment.plugin.api.PaymentPluginApi;
 import org.killbill.billing.plugin.notification.http.EmailNotificationServlet;
-import org.killbill.killbill.osgi.libs.killbill.KillbillActivatorBase;
-import org.killbill.killbill.osgi.libs.killbill.OSGIKillbillEventDispatcher.OSGIKillbillEventHandler;
 import org.osgi.framework.BundleContext;
 
 public class EmailNotificationActivator extends KillbillActivatorBase {
 
     public static final String PLUGIN_NAME = "killbill-email-notifications";
 
-    private OSGIKillbillEventHandler emailNotificationListener;
+    private OSGIKillbillEventDispatcher.OSGIKillbillEventHandler emailNotificationListener;
 
     @Override
     public void start(final BundleContext context) throws Exception {
@@ -41,7 +41,7 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
 
         // Register an event listener (optional)
         emailNotificationListener = new EmailNotificationListener(clock, logService, killbillAPI, configProperties);
-        dispatcher.registerEventHandler(emailNotificationListener);
+        dispatcher.registerEventHandlers(emailNotificationListener);
 
 
         // Register a servlet (optional)
@@ -56,10 +56,6 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         // Do additional work on shutdown (optional)
     }
 
-    @Override
-    public OSGIKillbillEventHandler getOSGIKillbillEventHandler() {
-        return emailNotificationListener;
-    }
 
     private void registerServlet(final BundleContext context, final HttpServlet servlet) {
         final Hashtable<String, String> props = new Hashtable<String, String>();

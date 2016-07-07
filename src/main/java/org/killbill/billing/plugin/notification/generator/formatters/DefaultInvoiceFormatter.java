@@ -33,6 +33,7 @@ import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.api.InvoicePayment;
+import org.killbill.billing.invoice.api.InvoiceStatus;
 import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 
 import com.google.common.base.MoreObjects;
@@ -161,6 +162,16 @@ public class DefaultInvoiceFormatter implements InvoiceFormatter {
     @Override
     public boolean isMigrationInvoice() {
         return invoice.isMigrationInvoice();
+    }
+
+    @Override
+    public InvoiceStatus getStatus() {
+        return invoice.getStatus();
+    }
+
+    @Override
+    public boolean isParentInvoice() {
+        return invoice.isParentInvoice();
     }
 
     @Override
