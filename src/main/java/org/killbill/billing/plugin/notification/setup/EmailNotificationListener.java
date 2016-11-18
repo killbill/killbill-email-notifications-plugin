@@ -208,6 +208,10 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_PAYMENT_FAILED || killbillEvent.getEventType() == ExtBusEventType.INVOICE_PAYMENT_SUCCESS, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
         final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(invoiceId, context);
+        if (invoice.getNumberOfPayments() == 0) {
+            // Aborted payment? Maybe no default payment method...
+            return;
+        }
         final InvoicePayment invoicePayment = invoice.getPayments().get(invoice.getNumberOfPayments() - 1);
 
         final Payment payment = osgiKillbillAPI.getPaymentApi().getPayment(invoicePayment.getPaymentId(), false, false, ImmutableList.<PluginProperty>of(), context);
