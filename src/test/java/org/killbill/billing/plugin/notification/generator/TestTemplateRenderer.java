@@ -30,6 +30,7 @@ import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.catalog.api.Plan;
 import org.killbill.billing.catalog.api.PlanPhase;
 import org.killbill.billing.catalog.api.PlanPhasePriceOverride;
+import org.killbill.billing.catalog.api.PlanSpecifier;
 import org.killbill.billing.catalog.api.PriceList;
 import org.killbill.billing.catalog.api.Product;
 import org.killbill.billing.catalog.api.ProductCategory;
@@ -70,7 +71,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 public class TestTemplateRenderer {
@@ -358,7 +359,7 @@ public class TestTemplateRenderer {
             }
 
             @Override
-            public PriceList getPriceList() {
+            public String getPriceListName() {
                 return null;
             }
 
@@ -524,17 +525,17 @@ public class TestTemplateRenderer {
             }
 
             @Override
-            public Entitlement changePlan(String productName, BillingPeriod billingPeriod, String priceList, List<PlanPhasePriceOverride> overrides, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
+            public Entitlement changePlan(PlanSpecifier spec, List<PlanPhasePriceOverride> overrides, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
                 return null;
             }
 
             @Override
-            public Entitlement changePlanWithDate(String productName, BillingPeriod billingPeriod, String priceList, List<PlanPhasePriceOverride> overrides, LocalDate effectiveDate, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
+            public Entitlement changePlanWithDate(PlanSpecifier spec, List<PlanPhasePriceOverride> overrides, LocalDate effectiveDate, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
                 return null;
             }
 
             @Override
-            public Entitlement changePlanOverrideBillingPolicy(String productName, BillingPeriod billingPeriod, String priceList, List<PlanPhasePriceOverride> overrides, LocalDate effectiveDate, BillingActionPolicy billingPolicy, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
+            public Entitlement changePlanOverrideBillingPolicy(PlanSpecifier spec, List<PlanPhasePriceOverride> overrides, LocalDate effectiveDate, BillingActionPolicy billingPolicy, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
                 return null;
             }
 
@@ -542,7 +543,6 @@ public class TestTemplateRenderer {
             public void updateBCD(int bcd, LocalDate effectiveFromDate, CallContext context) throws EntitlementApiException {
 
             }
-
 
             @Override
             public UUID getId() {
@@ -912,6 +912,11 @@ public class TestTemplateRenderer {
             public Boolean isPaymentDelegatedToParent() {
                 return null;
             }
+
+            @Override
+            public String getNotes() {
+                return null;
+            }
         };
     }
 
@@ -1019,7 +1024,17 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public Map<String, List<String>> searchTenantKeyValues(String searchKey, TenantContext context) throws TenantApiException {
+                return null;
+            }
+
+            @Override
             public void addTenantKeyValue(String key, String value, CallContext context) throws TenantApiException {
+
+            }
+
+            @Override
+            public void updateTenantKeyValue(String key, String value, CallContext context) throws TenantApiException {
 
             }
 

@@ -210,7 +210,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(invoiceId, context);
         final InvoicePayment invoicePayment = invoice.getPayments().get(invoice.getNumberOfPayments() - 1);
 
-        final Payment payment = osgiKillbillAPI.getPaymentApi().getPayment(invoicePayment.getPaymentId(), false, ImmutableList.<PluginProperty>of(), context);
+        final Payment payment = osgiKillbillAPI.getPaymentApi().getPayment(invoicePayment.getPaymentId(), false, false, ImmutableList.<PluginProperty>of(), context);
         final PaymentTransaction lastTransaction = payment.getTransactions().get(payment.getTransactions().size() - 1);
 
         if (lastTransaction.getTransactionType() != TransactionType.PURCHASE &&
