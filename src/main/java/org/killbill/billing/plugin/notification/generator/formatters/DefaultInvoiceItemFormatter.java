@@ -131,13 +131,28 @@ public class DefaultInvoiceItemFormatter implements InvoiceItemFormatter {
     }
 
     @Override
+    public String getPrettyPlanName() {
+        return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getPhaseName())), Strings.nullToEmpty( item.getPrettyPlanName()));
+    }
+
+    @Override
     public String getPhaseName() {
         return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getPhaseName())), Strings.nullToEmpty(item.getPhaseName()));
     }
 
     @Override
+    public String getPrettyPhaseName() {
+        return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getPhaseName())), Strings.nullToEmpty( item.getPrettyPhaseName()));
+    }
+
+    @Override
     public String getUsageName() {
         return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getUsageName())), Strings.nullToEmpty(item.getUsageName()));
+    }
+
+    @Override
+    public String getPrettyUsageName() {
+        return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getPhaseName())), Strings.nullToEmpty( item.getPrettyUsageName()));
     }
 
     @Override

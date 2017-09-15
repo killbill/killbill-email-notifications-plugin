@@ -63,9 +63,4 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         registrar.registerService(context, Servlet.class, servlet, props);
     }
 
-    private void registerPaymentPluginApi(final BundleContext context, final PaymentPluginApi api) {
-        final Hashtable<String, String> props = new Hashtable<String, String>();
-        props.put(OSGIPluginProperties.PLUGIN_NAME_PROP, PLUGIN_NAME);
-        registrar.registerService(context, PaymentPluginApi.class, api, props);
-    }
 }

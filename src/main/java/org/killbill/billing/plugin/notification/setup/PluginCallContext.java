@@ -34,9 +34,10 @@ public class PluginCallContext implements CallContext {
     protected final String comments;
     protected final DateTime createdDate;
     protected final DateTime updatedDate;
+    protected final UUID accountId;
     protected final UUID tenantId;
 
-    public PluginCallContext(final String pluginName, final DateTime utcNow, final UUID tenantId) {
+    public PluginCallContext(final String pluginName, final DateTime utcNow, final UUID accountId, final UUID tenantId) {
         this(UUID.randomUUID(),
                 pluginName,
                 CallOrigin.EXTERNAL,
@@ -45,6 +46,7 @@ public class PluginCallContext implements CallContext {
                 null,
                 utcNow,
                 utcNow,
+                accountId,
                 tenantId);
     }
 
@@ -56,6 +58,7 @@ public class PluginCallContext implements CallContext {
                              final String comments,
                              final DateTime createdDate,
                              final DateTime updatedDate,
+                             final UUID accountId,
                              final UUID tenantId) {
         this.userToken = userToken;
         this.userName = userName;
@@ -65,6 +68,7 @@ public class PluginCallContext implements CallContext {
         this.comments = comments;
         this.createdDate = createdDate;
         this.updatedDate = updatedDate;
+        this.accountId = accountId;
         this.tenantId = tenantId;
     }
 
@@ -109,6 +113,11 @@ public class PluginCallContext implements CallContext {
     }
 
     @Override
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    @Override
     public UUID getTenantId() {
         return tenantId;
     }
@@ -124,6 +133,7 @@ public class PluginCallContext implements CallContext {
         sb.append(", comments='").append(comments).append('\'');
         sb.append(", createdDate=").append(createdDate);
         sb.append(", updatedDate=").append(updatedDate);
+        sb.append(", accountId=").append(accountId);
         sb.append(", tenantId=").append(tenantId);
         sb.append('}');
         return sb.toString();
@@ -150,6 +160,9 @@ public class PluginCallContext implements CallContext {
             return false;
         }
         if (reasonCode != null ? !reasonCode.equals(that.reasonCode) : that.reasonCode != null) {
+            return false;
+        }
+        if (accountId != null ? !accountId.equals(that.accountId) : that.accountId != null) {
             return false;
         }
         if (tenantId != null ? !tenantId.equals(that.tenantId) : that.tenantId != null) {
@@ -181,6 +194,7 @@ public class PluginCallContext implements CallContext {
         result = 31 * result + (comments != null ? comments.hashCode() : 0);
         result = 31 * result + (createdDate != null ? createdDate.hashCode() : 0);
         result = 31 * result + (updatedDate != null ? updatedDate.hashCode() : 0);
+        result = 31 * result + (accountId != null ? accountId.hashCode() : 0);
         result = 31 * result + (tenantId != null ? tenantId.hashCode() : 0);
         return result;
     }

@@ -113,14 +113,14 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
 
         try {
-            final Account account = osgiKillbillAPI.getAccountUserApi().getAccountById(killbillEvent.getAccountId(), new EmailNotificationContext(killbillEvent.getTenantId()));
+            final Account account = osgiKillbillAPI.getAccountUserApi().getAccountById(killbillEvent.getAccountId(), new EmailNotificationContext(killbillEvent.getAccountId(), killbillEvent.getTenantId()));
             final String to = account.getEmail();
             if (to == null) {
                 logService.log(LogService.LOG_INFO, "Account " + account.getId() + " does not have an email address configured, skip...");
                 return;
             }
 
-            final EmailNotificationContext context = new EmailNotificationContext(killbillEvent.getTenantId());
+            final EmailNotificationContext context = new EmailNotificationContext(killbillEvent.getAccountId(), killbillEvent.getTenantId());
             switch (killbillEvent.getEventType()) {
                 case INVOICE_NOTIFICATION:
                     sendEmailForUpComingInvoice(account, killbillEvent, context);
@@ -177,7 +177,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         final DateTime now = clock.getClock().getUTCNow();
         final DateTime targetDateTime = now.plus(span.getMillis());
 
-        final PluginCallContext callContext = new PluginCallContext(EmailNotificationActivator.PLUGIN_NAME, now, context.getTenantId());
+        final PluginCallContext callContext = new PluginCallContext(EmailNotificationActivator.PLUGIN_NAME, now, context.getAccountId(), context.getTenantId());
         final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerInvoiceGeneration(account.getId(), new LocalDate(targetDateTime, account.getTimeZone()), NULL_DRY_RUN_ARGUMENTS, callContext);
         if (invoice != null) {
             final EmailContent emailContent = templateRenderer.generateEmailForUpComingInvoice(account, invoice, context);
@@ -251,10 +251,17 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
 
     private static final class EmailNotificationContext implements TenantContext {
 
+        private final UUID accountId;
         private final UUID tenantId;
 
-        private EmailNotificationContext(final UUID tenantId) {
+        private EmailNotificationContext(final UUID accountId, final UUID tenantId) {
+            this.accountId = accountId;
             this.tenantId = tenantId;
+        }
+
+        @Override
+        public UUID getAccountId() {
+            return accountId;
         }
 
         @Override
