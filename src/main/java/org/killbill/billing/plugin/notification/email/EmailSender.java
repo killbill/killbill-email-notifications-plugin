@@ -87,7 +87,7 @@ public class EmailSender {
         sendEmail(to, cc, subject, email);
     }
 
-    public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body) throws IOException, EmailException {
+    public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body) throws EmailException {
 
         logService.log(LogService.LOG_INFO, String.format("Sending email to = %s, cc= %s, subject = %s body = [%s]",
                 to,

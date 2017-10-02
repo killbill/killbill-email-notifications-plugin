@@ -43,6 +43,7 @@ import org.killbill.billing.invoice.api.InvoiceApiException;
 import org.killbill.billing.invoice.api.InvoicePayment;
 import org.killbill.billing.notification.plugin.api.ExtBusEvent;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
+import org.killbill.billing.notification.plugin.api.NotificationPluginApiRetryException;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillClock;
@@ -152,6 +153,8 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (EmailException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
+            // Attempt a retry
+            throw new NotificationPluginApiRetryException(e);
         } catch (IOException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (TenantApiException e) {
@@ -238,7 +241,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-    private void sendEmail(final Account account, final EmailContent emailContent, final TenantContext context) throws IOException, EmailException {
+    private void sendEmail(final Account account, final EmailContent emailContent, final TenantContext context) throws EmailException {
         final Iterable<String> cc = Iterables.transform(osgiKillbillAPI.getAccountUserApi().getEmails(account.getId(), context), new Function<AccountEmail, String>() {
             @Nullable
             @Override
