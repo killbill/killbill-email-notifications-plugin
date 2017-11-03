@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,25 +17,87 @@
 
 package org.killbill.billing.plugin.notification.http;
 
-import org.osgi.service.log.LogService;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class EmailNotificationServlet extends HttpServlet {
+import org.jooby.Results;
+import org.jooby.Result;
+import org.jooby.mvc.GET;
+import org.jooby.mvc.POST;
+import org.jooby.mvc.Path;
+import org.killbill.billing.notification.plugin.api.ExtBusEventType;
+import org.killbill.billing.osgi.libs.killbill.OSGIKillbillClock;
+import org.killbill.billing.osgi.libs.killbill.OSGIKillbillDataSource;
+import org.killbill.billing.plugin.notification.dao.ConfigurationDao;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    private final LogService logService;
+@Singleton
+@Path("/")
+public class EmailNotificationServlet {
 
-    public EmailNotificationServlet(final LogService logService) {
-        this.logService = logService;
+    private static final Logger logger = LoggerFactory.getLogger(EmailNotificationServlet.class);
+
+    private OSGIKillbillDataSource dataSource;
+    private ConfigurationDao dao;
+    private OSGIKillbillClock clock;
+
+    @Inject
+    public EmailNotificationServlet(OSGIKillbillDataSource dataSource, OSGIKillbillClock clock)
+    {
+        this.dataSource = dataSource;
+        this.clock = clock;
+
+        try {
+            this.dao = new ConfigurationDao(this.dataSource.getDataSource());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    @Override
-    protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+    @GET
+    public Result hello() {
         // Find me on http://127.0.0.1:8080/plugins/killbill-email-notifications
-        logService.log(LogService.LOG_INFO, "HI!");
+        logger.info("Hello from email notification plugin!!!");
+        return Results.ok();
+    }
+
+    @GET
+    @Path("/tenant/:kbTenantId/account/:kbAccountId")
+    public Result getEventTypes(final UUID kbAccountId, final UUID kbTenantId, Optional<ExtBusEventType> eventType) {
+        if (!eventType.isPresent())
+        {
+            return EmailNotificationService.getEventTypes(this.dao, kbAccountId, kbTenantId);
+        }
+        else
+        {
+            return EmailNotificationService.getEventType(this.dao, kbAccountId, kbTenantId, eventType.get());
+
+        }
+    }
+
+    @GET
+    @Path("/tenant/:kbTenantId")
+    public Result getEventTypesPerTenant(final UUID kbTenantId) {
+        return EmailNotificationService.getEventTypesPerTenant(this.dao, kbTenantId);
+    }
+
+    @POST
+    @Path("/tenant/:kbTenantId/account/:kbAccountId")
+    public Result doUpdateEventTypePerAccount(final UUID kbAccountId, final UUID kbTenantId, final List<ExtBusEventType> eventTypes){
+        return EmailNotificationService.doUpdateEventTypePerAccount(this.dao, kbAccountId, kbTenantId, eventTypes,
+                                                                    this.clock.getClock().getUTCNow());
+    }
+
+    @POST
+    @Path("/tenant/:kbTenantId")
+    public Result doUpdateEventTypePerTenant(final UUID kbTenantId, final List<ExtBusEventType> eventTypes){
+        return EmailNotificationService.doUpdateEventTypePerTenant(this.dao, kbTenantId, eventTypes,
+                                                                    this.clock.getClock().getUTCNow());
     }
 }

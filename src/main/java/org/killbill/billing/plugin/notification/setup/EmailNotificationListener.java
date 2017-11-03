@@ -46,6 +46,7 @@ import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillClock;
+import org.killbill.billing.osgi.libs.killbill.OSGIKillbillDataSource;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillEventDispatcher;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
 import org.killbill.billing.payment.api.Payment;
@@ -59,6 +60,8 @@ import org.killbill.billing.plugin.notification.email.EmailSender;
 import org.killbill.billing.plugin.notification.generator.ResourceBundleFactory;
 import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
+import org.killbill.billing.plugin.notification.dao.gen.tables.pojos.EmailNotificationsConfiguration;
+import org.killbill.billing.plugin.notification.dao.ConfigurationDao;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.osgi.service.log.LogService;
@@ -66,6 +69,7 @@ import org.skife.config.TimeSpan;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -81,7 +85,8 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
     private final OSGIConfigPropertiesService configProperties;
     private final EmailSender emailSender;
     private final OSGIKillbillClock clock;
-
+    private final ConfigurationDao dao;
+    private final EmailNotificationConfigurationHandler emailNotificationConfigurationHandler;
 
     private final ImmutableList<ExtBusEventType> EVENTS_TO_CONSIDER = new ImmutableList.Builder()
             .add(ExtBusEventType.INVOICE_NOTIFICATION)
@@ -92,19 +97,27 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             .build();
 
 
-    public EmailNotificationListener(final OSGIKillbillClock clock, final OSGIKillbillLogService logService, final OSGIKillbillAPI killbillAPI, final OSGIConfigPropertiesService configProperties) {
+    public EmailNotificationListener(final OSGIKillbillClock clock, final OSGIKillbillLogService logService, final OSGIKillbillAPI killbillAPI, final OSGIConfigPropertiesService configProperties,
+                                     OSGIKillbillDataSource dataSource, EmailNotificationConfigurationHandler emailNotificationConfigurationHandler) throws SQLException {
         this.logService = logService;
         this.osgiKillbillAPI = killbillAPI;
         this.configProperties = configProperties;
         this.clock = clock;
         this.emailSender = new EmailSender(configProperties, logService);
         this.templateRenderer = new TemplateRenderer(new MustacheTemplateEngine(), new ResourceBundleFactory(killbillAPI.getTenantUserApi(), logService), killbillAPI.getTenantUserApi(), logService);
+        this.dao = new ConfigurationDao(dataSource.getDataSource());
+        this.emailNotificationConfigurationHandler = emailNotificationConfigurationHandler;
     }
 
     @Override
     public void handleKillbillEvent(final ExtBusEvent killbillEvent) {
 
         if (!EVENTS_TO_CONSIDER.contains(killbillEvent.getEventType())) {
+            return;
+        }
+
+        if(!isEventTypeAllowed(killbillEvent.getAccountId(),killbillEvent.getTenantId(),killbillEvent.getEventType()))
+        {
             return;
         }
 
@@ -163,6 +176,31 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         } finally {
             Thread.currentThread().setContextClassLoader(previousClassLoader);
         }
+    }
+
+    private boolean isEventTypeAllowed(final UUID kbAccountId, final UUID kbTenantId, final ExtBusEventType eventType)
+    {
+        final EmailNotificationsConfiguration registeredEventType;
+        final EmailNotificationConfiguration configuration = emailNotificationConfigurationHandler.getConfigurable(kbTenantId);
+
+        if (configuration.getEventTypes().contains(eventType.toString()))
+        {
+            return true;
+        }
+
+        try {
+            registeredEventType = this.dao.getEventType(kbAccountId,kbTenantId,eventType);
+        } catch (SQLException e) {
+            logService.log(LogService.LOG_ERROR, String.format("Error retrieving email notification event registry: %s",e.getMessage()));
+            return false;
+        }
+
+        if (registeredEventType == null) {
+            logService.log(LogService.LOG_WARNING, String.format("Registration of event %s is not available for account %s.",eventType.toString(),kbAccountId));
+            return false;
+        }
+
+        return true;
     }
 
     private void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException, TenantApiException {
