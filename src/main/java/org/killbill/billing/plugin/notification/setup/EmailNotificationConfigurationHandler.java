@@ -37,8 +37,7 @@ import org.slf4j.LoggerFactory;
  *      -H "X-Killbill-ApiKey: bob" \
  *      -H "X-Killbill-ApiSecret: lazar" \
  *      -H "X-Killbill-CreatedBy: demo" \
- *      -d 'key1=
- * key2=' \
+ *      -d 'org.killbill.billing.plugin.email-notifications.defaultEvents=events'
  *      "http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications"
  * }
  * </pre>

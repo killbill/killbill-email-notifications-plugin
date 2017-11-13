@@ -36,6 +36,7 @@ import org.osgi.framework.BundleContext;
 public class EmailNotificationActivator extends KillbillActivatorBase {
 
     public static final String PLUGIN_NAME = "killbill-email-notifications";
+    public static final String PROPERTY_PREFIX = "org.killbill.billing.plugin.email-notifications.";
 
     private OSGIKillbillEventDispatcher.OSGIKillbillEventHandler emailNotificationListener;
     private EmailNotificationConfigurationHandler emailNotificationConfigurationHandler;

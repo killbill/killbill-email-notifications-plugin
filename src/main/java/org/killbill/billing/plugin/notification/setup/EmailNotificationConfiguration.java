@@ -21,7 +21,12 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class EmailNotificationConfiguration {
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailNotificationConfiguration.class);
 
     private final Set<String> eventTypes;
 
@@ -31,7 +36,16 @@ public class EmailNotificationConfiguration {
 
     public EmailNotificationConfiguration(final Properties properties)
     {
-        eventTypes = properties.stringPropertyNames();
+        String defaultEvents = properties.getProperty(EmailNotificationActivator.PROPERTY_PREFIX + "defaultEvents");
+
+        eventTypes = new HashSet<String>();
+        if (defaultEvents != null && !defaultEvents.isEmpty())
+        {
+            for( String eventType : defaultEvents.split(","))
+            {
+                eventTypes.add(eventType);
+            }
+        }
     }
 
     public final Set<String> getEventTypes() {
