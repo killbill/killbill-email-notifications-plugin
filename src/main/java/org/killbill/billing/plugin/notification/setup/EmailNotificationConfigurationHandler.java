@@ -17,7 +17,6 @@
 
 package org.killbill.billing.plugin.notification.setup;
 
-import java.util.Enumeration;
 import java.util.Properties;
 
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
@@ -65,7 +64,7 @@ public class EmailNotificationConfigurationHandler extends PluginTenantConfigura
     protected EmailNotificationConfiguration createConfigurable(final Properties properties) {
         logger.info("New properties for region {}: {}", region, properties);
         try {
-            return new EmailNotificationConfiguration(properties, logger);
+            return new EmailNotificationConfiguration(properties);
         } catch (final Exception e) {
             logger.info(e.getMessage());
             return new EmailNotificationConfiguration();

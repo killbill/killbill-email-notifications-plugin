@@ -17,20 +17,19 @@
 
 package org.killbill.billing.plugin.notification.setup;
 
+import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-
-import org.slf4j.Logger;
 
 public class EmailNotificationConfiguration {
 
     private final Set<String> eventTypes;
 
     public EmailNotificationConfiguration(){
-        eventTypes = null;
+        eventTypes = new HashSet<String>();
     }
 
-    public EmailNotificationConfiguration(final Properties properties, final Logger logger)
+    public EmailNotificationConfiguration(final Properties properties)
     {
         eventTypes = properties.stringPropertyNames();
     }

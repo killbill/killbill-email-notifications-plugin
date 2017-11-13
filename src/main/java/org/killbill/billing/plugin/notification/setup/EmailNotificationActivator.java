@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -18,7 +18,6 @@
 package org.killbill.billing.plugin.notification.setup;
 
 import java.util.Hashtable;
-import java.util.Properties;
 
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
@@ -32,7 +31,6 @@ import org.killbill.billing.plugin.core.config.PluginEnvironmentConfig;
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.killbill.billing.plugin.notification.http.EmailNotificationServlet;
-import org.killbill.billing.plugin.notification.setup.EmailNotificationConfigurationHandler;
 import org.osgi.framework.BundleContext;
 
 public class EmailNotificationActivator extends KillbillActivatorBase {

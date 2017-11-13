@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -88,7 +88,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
     private final ConfigurationDao dao;
     private final EmailNotificationConfigurationHandler emailNotificationConfigurationHandler;
 
-    private final ImmutableList<ExtBusEventType> EVENTS_TO_CONSIDER = new ImmutableList.Builder()
+    public static final ImmutableList<ExtBusEventType> EVENTS_TO_CONSIDER = new ImmutableList.Builder()
             .add(ExtBusEventType.INVOICE_NOTIFICATION)
             .add(ExtBusEventType.INVOICE_CREATION)
             .add(ExtBusEventType.INVOICE_PAYMENT_SUCCESS)

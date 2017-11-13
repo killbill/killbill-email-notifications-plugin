@@ -32,9 +32,8 @@ import org.jooq.impl.DSL;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import org.killbill.billing.plugin.dao.PluginDao;
 
+import org.killbill.billing.plugin.notification.dao.gen.Tables;
 import org.killbill.billing.plugin.notification.dao.gen.tables.pojos.EmailNotificationsConfiguration;
-
-import static org.killbill.billing.plugin.notification.dao.gen.Tables.EMAIL_NOTIFICATIONS_CONFIGURATION;
 
 public class ConfigurationDao extends PluginDao
 {
@@ -59,11 +58,10 @@ public class ConfigurationDao extends PluginDao
                            @Override
                            public List<EmailNotificationsConfiguration> withConnection(final Connection conn) throws SQLException {
                                return DSL.using(conn, dialect, settings)
-                                         .selectFrom(EMAIL_NOTIFICATIONS_CONFIGURATION)
-                                         .where(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
-                                         .and(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString())
-                                                 .or(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).isNull()))
-                                         .orderBy(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + RECORD_ID).asc())
+                                         .selectFrom(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
+                                         .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
+                                         .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString()))
+                                         .orderBy(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + RECORD_ID).asc())
                                          .fetch().into(EmailNotificationsConfiguration.class);
                            }
                        });
@@ -75,12 +73,11 @@ public class ConfigurationDao extends PluginDao
                            @Override
                            public List<EmailNotificationsConfiguration> withConnection(final Connection conn) throws SQLException {
                                return DSL.using(conn, dialect, settings)
-                                         .selectFrom(EMAIL_NOTIFICATIONS_CONFIGURATION)
-                                         .where(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
-                                         .and(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString())
-                                                 .or(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).isNull()))
-                                         .and(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + EVENT_TYPE).equal(eventType.toString()))
-                                         .orderBy(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + RECORD_ID).asc())
+                                         .selectFrom(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
+                                         .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
+                                         .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString()))
+                                         .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + EVENT_TYPE).equal(eventType.toString()))
+                                         .orderBy(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + RECORD_ID).asc())
                                          .fetch().into(EmailNotificationsConfiguration.class);
                            }
                        });
@@ -91,94 +88,64 @@ public class ConfigurationDao extends PluginDao
         return foundEventType.size() == 0 ? null : getEventTypes(kbAccountId,kbTenantId,eventType).get(0);
     }
 
-    public List<EmailNotificationsConfiguration> getEventTypesPerTenant(final UUID kbTenantId) throws SQLException {
-        return execute(dataSource.getConnection(),
-                       new WithConnectionCallback<List<EmailNotificationsConfiguration>>() {
-                           @Override
-                           public List<EmailNotificationsConfiguration> withConnection(final Connection conn) throws SQLException {
-                               return DSL.using(conn, dialect, settings)
-                                         .selectFrom(EMAIL_NOTIFICATIONS_CONFIGURATION)
-                                         .where(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).isNull())
-                                         .and(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
-                                         .orderBy(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + RECORD_ID).asc())
-                                         .fetch().into(EmailNotificationsConfiguration.class);
-                           }
-                       });
-    }
-
-    public void updateEventTypePerTenant(final UUID kbTenantId,
-                                         final List<ExtBusEventType> eventTypes,
-                                         final DateTime utcNow) throws SQLException {
-        this.updateEventType(null,kbTenantId,eventTypes,utcNow);
-    }
-
-    public void updateEventTypePerAccount(final UUID kbAccountId,
+    public void updateConfigurationPerAccount(final UUID kbAccountId,
                                           final UUID kbTenantId,
                                           final List<ExtBusEventType> eventTypes,
                                           final DateTime utcNow) throws SQLException {
-        this.updateEventType(kbAccountId,kbTenantId,eventTypes,utcNow);
+        this.updateConfiguration(kbAccountId,kbTenantId,eventTypes,utcNow);
     }
 
-    public void updateEventType(final UUID kbAccountId,
+    private void updateConfiguration(final UUID kbAccountId,
                                 final UUID kbTenantId,
                                 final List<ExtBusEventType> eventTypes,
                                 final DateTime utcNow) throws SQLException {
-        this.deleteEventType(kbAccountId,kbTenantId);
 
-        for (ExtBusEventType eventType: eventTypes){
-            this.addEventType(kbAccountId, eventType, utcNow, kbTenantId);
-        }
+        execute(dataSource.getConnection(),
+            new WithConnectionCallback<Void>() {
+                @Override
+                public Void withConnection(final Connection conn) throws SQLException {
+                    DSL.using(conn, dialect, settings).transaction(context -> {
+                                                    DSL.using(context)
+                                                       .delete(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
+                                                       .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString()))
+                                                       .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
+                                                       .execute();
 
+                                                    for (ExtBusEventType eventType : eventTypes) {
+                                                        DSL.using(context)
+                                                           .insertInto(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION,
+                                                                       DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID),
+                                                                       DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + EVENT_TYPE),
+                                                                       DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + CREATED_AT),
+                                                                       DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID))
+                                                           .values(kbAccountId.toString(),
+                                                                   eventType.toString(),
+                                                                   toTimestamp(utcNow),
+                                                                   kbTenantId.toString())
+                                                           .execute();
+                                                        }
+                                                    }
+                    );
+                    return null;
+                }
+            });
     }
 
-    public void addEventType(final UUID kbAccountId,
-                            final ExtBusEventType eventType,
-                            final DateTime utcNow,
-                            final UUID kbTenantId) throws SQLException {
+    public void deleteConfiguration(final UUID kbAccountId, final UUID kbTenantId) throws SQLException {
         execute(dataSource.getConnection(),
                 new WithConnectionCallback<Void>() {
                     @Override
                     public Void withConnection(final Connection conn) throws SQLException {
+
                         DSL.using(conn, dialect, settings)
-                           .insertInto(EMAIL_NOTIFICATIONS_CONFIGURATION,
-                                       DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID),
-                                       DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + EVENT_TYPE),
-                                       DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + CREATED_AT),
-                                       DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID))
-                           .values(kbAccountId == null ? null : kbAccountId.toString(),
-                                   eventType.toString(),
-                                   toTimestamp(utcNow),
-                                   kbTenantId.toString())
+                           .delete(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
+                           .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString()))
+                           .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
                            .execute();
-                        return null;
-                    }
-                });
-    }
-
-    public void deleteEventType(final UUID kbAccountId, final UUID kbTenantId) throws SQLException {
-        execute(dataSource.getConnection(),
-                new WithConnectionCallback<Void>() {
-                    @Override
-                    public Void withConnection(final Connection conn) throws SQLException {
-                        if (kbAccountId == null)
-                        {
-                            DSL.using(conn, dialect, settings)
-                               .delete(EMAIL_NOTIFICATIONS_CONFIGURATION)
-                               .where(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).isNull())
-                               .and(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
-                               .execute();
-                        }
-                        else
-                        {
-                            DSL.using(conn, dialect, settings)
-                               .delete(EMAIL_NOTIFICATIONS_CONFIGURATION)
-                               .where(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString()))
-                               .and(DSL.field(EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
-                               .execute();
-                        }
 
                         return null;
                     }
                 });
     }
+
 }

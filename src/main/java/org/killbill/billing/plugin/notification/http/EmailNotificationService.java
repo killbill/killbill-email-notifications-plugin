@@ -21,15 +21,13 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
-import javax.swing.event.DocumentEvent.EventType;
-
 import org.joda.time.DateTime;
 import org.jooby.Result;
 import org.jooby.Results;
 import org.jooby.Status;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
-import org.killbill.billing.plugin.notification.dao.ConfigurationDao;
 import org.killbill.billing.plugin.notification.dao.gen.tables.pojos.EmailNotificationsConfiguration;
+import org.killbill.billing.plugin.notification.dao.ConfigurationDao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,21 +67,6 @@ public final class EmailNotificationService
         return eventTypeRsp == null ? Results.with(Status.NOT_FOUND) : Results.json(eventTypeRsp);
     }
 
-    public static Result getEventTypesPerTenant(final ConfigurationDao dao, final UUID kbTenantId)
-    {
-        logger.debug(String.format("Enters get event types per tenant %s",kbTenantId));
-
-        List<EmailNotificationsConfiguration> eventTypes = null;
-        try {
-            eventTypes = dao.getEventTypesPerTenant(kbTenantId);
-        } catch (SQLException e) {
-            logger.error(e.getMessage());
-            return Results.with(e.getMessage(), Status.SERVER_ERROR);
-        }
-
-        return eventTypes == null || eventTypes.size() == 0 ? Results.with(Status.NOT_FOUND) : Results.json(eventTypes);
-    }
-
     public static Result doUpdateEventTypePerAccount(final ConfigurationDao dao, final UUID kbAccountId,
                                                      final UUID kbTenantId, final List<ExtBusEventType> eventTypes,
                                                      final DateTime utcNow)
@@ -100,28 +83,7 @@ public final class EmailNotificationService
         }
 
         try {
-            dao.updateEventTypePerAccount(kbAccountId,kbTenantId,eventTypes,utcNow);
-        } catch (SQLException e) {
-            logger.error(e.getMessage());
-            return Results.with(e.getMessage(), Status.SERVER_ERROR);
-        }
-
-        return Results.with(Status.CREATED);
-    }
-
-    public static Result doUpdateEventTypePerTenant(final ConfigurationDao dao,
-                                                     final UUID kbTenantId, final List<ExtBusEventType> eventTypes,
-                                                     final DateTime utcNow)
-    {
-        logger.debug(String.format("Enters update event types per tenant %s",kbTenantId));
-
-        if (kbTenantId == null)
-        {
-            return Results.with("No tenant specified",Status.NOT_FOUND);
-        }
-
-        try {
-            dao.updateEventTypePerTenant(kbTenantId,eventTypes,utcNow);
+            dao.updateConfigurationPerAccount(kbAccountId,kbTenantId,eventTypes,utcNow);
         } catch (SQLException e) {
             logger.error(e.getMessage());
             return Results.with(e.getMessage(), Status.SERVER_ERROR);
