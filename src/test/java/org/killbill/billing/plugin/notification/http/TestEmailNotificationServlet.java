@@ -69,17 +69,46 @@ public class TestEmailNotificationServlet extends TestWithEmbeddedDBBase {
         Result result = servlet.hello();
         Assert.assertEquals(result.status().get().value(),200);
 
-        result = servlet.getEventTypes(kbAccountId, buildTenant(kbTenantId), event);
+        result = servlet.getEventTypesPerAccount(kbAccountId, buildTenant(kbTenantId), event);
         Assert.assertEquals(result.status().get().value(),404);
 
         result = servlet.doUpdateEventTypePerAccount(kbAccountId, buildTenant(kbTenantId), eventTypes);
         Assert.assertEquals(result.status().get().value(),201);
 
-        result = servlet.getEventTypes(kbAccountId, buildTenant(kbTenantId), event);
+        result = servlet.getEventTypesPerAccount(kbAccountId, buildTenant(kbTenantId), event);
         EmailNotificationsConfiguration configuration = result.get();
         Assert.assertEquals(configuration.getKbAccountId(),kbAccountId.toString());
         Assert.assertEquals(configuration.getKbTenantId(),kbTenantId.toString());
         Assert.assertEquals(configuration.getEventType(),ExtBusEventType.INVOICE_PAYMENT_SUCCESS.toString());
+        Assert.assertEquals(result.status().get().value(),200);
+
+    }
+
+    @Test(groups = "slow")
+    public void updateMulipleConfiguration() throws IOException
+    {
+        Result result = null;
+        final  List<UUID> kbAccountIds = new ArrayList<>();
+        for(int i=0; i<50; i++){
+            kbAccountIds.add(UUID.randomUUID());
+        }
+
+        final UUID kbTenantId = UUID.randomUUID();
+        final Tenant tenant = buildTenant(kbTenantId);
+
+        List<ExtBusEventType> eventTypes = new ArrayList<ExtBusEventType>();
+        eventTypes.add(ExtBusEventType.INVOICE_PAYMENT_SUCCESS);
+        eventTypes.add(ExtBusEventType.SUBSCRIPTION_CANCEL);
+        EmailNotificationServlet servlet =  new EmailNotificationServlet(dataSource,clock);
+
+        for(UUID kbAccountId : kbAccountIds) {
+            result = servlet.doUpdateEventTypePerAccount(kbAccountId, tenant, eventTypes);
+            Assert.assertEquals(result.status().get().value(), 201);
+        }
+
+        result = servlet.getEventTypes(kbAccountIds, buildTenant(kbTenantId));
+        List<EmailNotificationsConfiguration> configurations = result.get();
+        Assert.assertEquals(configurations.size(),kbAccountIds.size() * eventTypes.size());
         Assert.assertEquals(result.status().get().value(),200);
     }
 

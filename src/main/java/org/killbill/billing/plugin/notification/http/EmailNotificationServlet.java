@@ -81,18 +81,26 @@ public class EmailNotificationServlet {
     }
 
     @GET
+    @Path("/accounts")
+    public Result getEventTypes(@Named("kbAccountId") List<UUID> kbAccountId, @Local @Named("killbill_tenant") final Tenant tenant) {
+        final UUID kbTenantId = tenant.getId();
+
+        return EmailNotificationService.getEventTypes(this.dao, kbAccountId, kbTenantId);
+    }
+
+    @GET
     @Path("/accounts/:kbAccountId")
-    public Result getEventTypes(@Named("kbAccountId") final UUID kbAccountId, @Local @Named("killbill_tenant") final Tenant tenant,
+    public Result getEventTypesPerAccount(@Named("kbAccountId") final UUID kbAccountId, @Local @Named("killbill_tenant") final Tenant tenant,
                                 Optional<ExtBusEventType> eventType) {
         final UUID kbTenantId = tenant.getId();
 
         if (!eventType.isPresent())
         {
-            return EmailNotificationService.getEventTypes(this.dao, kbAccountId, kbTenantId);
+            return EmailNotificationService.getEventTypesPerAccount(this.dao, kbAccountId, kbTenantId);
         }
         else
         {
-            return EmailNotificationService.getEventType(this.dao, kbAccountId, kbTenantId, eventType.get());
+            return EmailNotificationService.getEventTypePerAccount(this.dao, kbAccountId, kbTenantId, eventType.get());
 
         }
     }

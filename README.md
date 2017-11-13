@@ -46,12 +46,8 @@ curl -v \
      -H 'X-Killbill-ApiSecret: lazar' \
      -H 'X-Killbill-CreatedBy: admin' \
      -H 'Content-Type: text/plain' \
-     -d 'INVOICE_NOTIFICATION
-INVOICE_CREATION
-INVOICE_PAYMENT_SUCCESS
-INVOICE_PAYMENT_FAILED
-SUBSCRIPTION_CANCEL' \
-http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications
+     -d 'org.killbill.billing.plugin.email-notifications.defaultEvents=INVOICE_PAYMENT_SUCCESS,SUBSCRIPTION_CANCEL' \
+     http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications
 ```
 
 #### Per account

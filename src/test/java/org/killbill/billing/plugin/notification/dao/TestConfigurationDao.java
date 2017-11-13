@@ -50,20 +50,20 @@ public class TestConfigurationDao extends TestWithEmbeddedDBBase {
 
         dao.updateConfigurationPerAccount(kbAccountId,kbTenantId,eventTypes,DateTime.now());
 
-        List<EmailNotificationsConfiguration> configuration = dao.getEventTypes(kbAccountId, kbTenantId);
+        List<EmailNotificationsConfiguration> configuration = dao.getEventTypesPerAccount(kbAccountId, kbTenantId);
         Assert.assertNotNull(configuration);
         Assert.assertEquals(configuration.size(),2);
-        Assert.assertEquals(dao.getEventTypes(kbAccountId, UUID.randomUUID()).size(),0);
-        Assert.assertTrue(eventTypes.contains(configuration.get(0).getEventType()));
-        Assert.assertTrue(eventTypes.contains(configuration.get(1).getEventType()));
-        Assert.assertEquals(configuration.get(0).getKbAccountId(),kbAccountId);
-        Assert.assertEquals(configuration.get(0).getKbTenantId(),kbTenantId);
+        Assert.assertEquals(dao.getEventTypesPerAccount(kbAccountId, UUID.randomUUID()).size(),0);
+        Assert.assertTrue(eventTypes.contains(ExtBusEventType.valueOf(configuration.get(0).getEventType())));
+        Assert.assertTrue(eventTypes.contains(ExtBusEventType.valueOf(configuration.get(1).getEventType())));
+        Assert.assertEquals(configuration.get(0).getKbAccountId(),kbAccountId.toString());
+        Assert.assertEquals(configuration.get(0).getKbTenantId(),kbTenantId.toString());
 
-        EmailNotificationsConfiguration event = dao.getEventType(kbAccountId, kbTenantId, ExtBusEventType.INVOICE_PAYMENT_SUCCESS);
+        EmailNotificationsConfiguration event = dao.getEventTypePerAccount(kbAccountId, kbTenantId, ExtBusEventType.INVOICE_PAYMENT_SUCCESS);
         Assert.assertNotNull(event);
-        Assert.assertEquals(event.getKbAccountId(),kbAccountId);
-        Assert.assertEquals(event.getKbTenantId(),kbTenantId);
-        Assert.assertEquals(event.getEventType(), ExtBusEventType.INVOICE_PAYMENT_SUCCESS);
+        Assert.assertEquals(event.getKbAccountId(),kbAccountId.toString());
+        Assert.assertEquals(event.getKbTenantId(),kbTenantId.toString());
+        Assert.assertEquals(event.getEventType(), ExtBusEventType.INVOICE_PAYMENT_SUCCESS.toString());
 
         eventTypes = new ArrayList<ExtBusEventType>();
         eventTypes.add(ExtBusEventType.INVOICE_PAYMENT_SUCCESS);
@@ -71,19 +71,19 @@ public class TestConfigurationDao extends TestWithEmbeddedDBBase {
 
         dao.updateConfigurationPerAccount(kbAccountId,kbTenantId,eventTypes,DateTime.now());
 
-        configuration = dao.getEventTypes(kbAccountId, kbTenantId);
+        configuration = dao.getEventTypesPerAccount(kbAccountId, kbTenantId);
         Assert.assertNotNull(configuration);
         Assert.assertEquals(configuration.size(),2);
-        Assert.assertEquals(dao.getEventTypes(kbAccountId, UUID.randomUUID()).size(),0);
-        Assert.assertTrue(eventTypes.contains(configuration.get(0).getEventType()));
-        Assert.assertTrue(eventTypes.contains(configuration.get(1).getEventType()));
-        Assert.assertEquals(configuration.get(0).getKbAccountId(),kbAccountId);
-        Assert.assertEquals(configuration.get(0).getKbTenantId(),kbTenantId);
+        Assert.assertEquals(dao.getEventTypesPerAccount(kbAccountId, UUID.randomUUID()).size(),0);
+        Assert.assertTrue(eventTypes.contains(ExtBusEventType.valueOf(configuration.get(0).getEventType())));
+        Assert.assertTrue(eventTypes.contains(ExtBusEventType.valueOf(configuration.get(1).getEventType())));
+        Assert.assertEquals(configuration.get(0).getKbAccountId(),kbAccountId.toString());
+        Assert.assertEquals(configuration.get(0).getKbTenantId(),kbTenantId.toString());
 
-        event = dao.getEventType(kbAccountId, kbTenantId, ExtBusEventType.INVOICE_PAYMENT_FAILED);
+        event = dao.getEventTypePerAccount(kbAccountId, kbTenantId, ExtBusEventType.INVOICE_PAYMENT_FAILED);
         Assert.assertNotNull(event);
-        Assert.assertEquals(event.getKbAccountId(),kbAccountId);
-        Assert.assertEquals(event.getKbTenantId(),kbTenantId);
-        Assert.assertEquals(event.getEventType(), ExtBusEventType.INVOICE_PAYMENT_FAILED);
+        Assert.assertEquals(event.getKbAccountId(),kbAccountId.toString());
+        Assert.assertEquals(event.getKbTenantId(),kbTenantId.toString());
+        Assert.assertEquals(event.getEventType(), ExtBusEventType.INVOICE_PAYMENT_FAILED.toString());
     }
 }

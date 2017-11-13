@@ -52,7 +52,22 @@ public class ConfigurationDao extends PluginDao
         Enumeration<?> eventType = properties.propertyNames();
     }
 
-    public List<EmailNotificationsConfiguration> getEventTypes(final UUID kbAccountId, final UUID kbTenantId) throws SQLException {
+    public List<EmailNotificationsConfiguration> getEventTypes(final List<UUID> kbAccountId, final UUID kbTenantId) throws SQLException {
+        return execute(dataSource.getConnection(),
+                       new WithConnectionCallback<List<EmailNotificationsConfiguration>>() {
+                           @Override
+                           public List<EmailNotificationsConfiguration> withConnection(final Connection conn) throws SQLException {
+                               return DSL.using(conn, dialect, settings)
+                                         .selectFrom(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
+                                         .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
+                                         .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).in(kbAccountId))
+                                         .orderBy(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + RECORD_ID).asc())
+                                         .fetch().into(EmailNotificationsConfiguration.class);
+                           }
+                       });
+    }
+
+    public List<EmailNotificationsConfiguration> getEventTypesPerAccount(final UUID kbAccountId, final UUID kbTenantId) throws SQLException {
         return execute(dataSource.getConnection(),
                        new WithConnectionCallback<List<EmailNotificationsConfiguration>>() {
                            @Override
@@ -67,7 +82,7 @@ public class ConfigurationDao extends PluginDao
                        });
     }
 
-    public List<EmailNotificationsConfiguration> getEventTypes(final UUID kbAccountId, final UUID kbTenantId, final ExtBusEventType eventType) throws SQLException {
+    public List<EmailNotificationsConfiguration> getEventTypesPerAccount(final UUID kbAccountId, final UUID kbTenantId, final ExtBusEventType eventType) throws SQLException {
         return execute(dataSource.getConnection(),
                        new WithConnectionCallback<List<EmailNotificationsConfiguration>>() {
                            @Override
@@ -83,9 +98,9 @@ public class ConfigurationDao extends PluginDao
                        });
     }
 
-    public EmailNotificationsConfiguration getEventType(final UUID kbAccountId, final UUID kbTenantId, final ExtBusEventType eventType) throws SQLException {
-        final List<EmailNotificationsConfiguration> foundEventType = getEventTypes(kbAccountId,kbTenantId,eventType);
-        return foundEventType.size() == 0 ? null : getEventTypes(kbAccountId,kbTenantId,eventType).get(0);
+    public EmailNotificationsConfiguration getEventTypePerAccount(final UUID kbAccountId, final UUID kbTenantId, final ExtBusEventType eventType) throws SQLException {
+        final List<EmailNotificationsConfiguration> foundEventType = getEventTypesPerAccount(kbAccountId,kbTenantId,eventType);
+        return foundEventType.size() == 0 ? null : foundEventType.get(0);
     }
 
     public void updateConfigurationPerAccount(final UUID kbAccountId,

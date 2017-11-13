@@ -37,9 +37,9 @@ public final class EmailNotificationService
 
     private EmailNotificationService(){}
 
-    public static Result getEventTypes(final ConfigurationDao dao, final UUID kbAccountId, final UUID kbTenantId)
+    public static Result getEventTypes(final ConfigurationDao dao, final List<UUID> kbAccountId, final UUID kbTenantId)
     {
-        logger.debug(String.format("Enters get event types %s - %s",kbAccountId,kbTenantId));
+        logger.debug(String.format("Enters get event types for %s accounts - %s",kbAccountId.size(),kbTenantId));
 
         List<EmailNotificationsConfiguration> eventTypes = null;
         try {
@@ -52,13 +52,28 @@ public final class EmailNotificationService
         return eventTypes == null  || eventTypes.size() == 0? Results.with(Status.NOT_FOUND) : Results.json(eventTypes);
     }
 
-    public static Result getEventType(final ConfigurationDao dao, final UUID kbAccountId, final UUID kbTenantId, final ExtBusEventType eventType )
+    public static Result getEventTypesPerAccount(final ConfigurationDao dao, final UUID kbAccountId, final UUID kbTenantId)
+    {
+        logger.debug(String.format("Enters get event types %s - %s",kbAccountId,kbTenantId));
+
+        List<EmailNotificationsConfiguration> eventTypes = null;
+        try {
+            eventTypes = dao.getEventTypesPerAccount(kbAccountId, kbTenantId);
+        } catch (SQLException e) {
+            logger.error(e.getMessage());
+            return Results.with(e.getMessage(), Status.SERVER_ERROR);
+        }
+
+        return eventTypes == null  || eventTypes.size() == 0? Results.with(Status.NOT_FOUND) : Results.json(eventTypes);
+    }
+
+    public static Result getEventTypePerAccount(final ConfigurationDao dao, final UUID kbAccountId, final UUID kbTenantId, final ExtBusEventType eventType )
     {
         logger.debug(String.format("Enters get event type %s - %s",kbAccountId,kbTenantId));
 
         EmailNotificationsConfiguration eventTypeRsp = null;
         try {
-            eventTypeRsp = dao.getEventType(kbAccountId, kbTenantId, eventType);
+            eventTypeRsp = dao.getEventTypePerAccount(kbAccountId, kbTenantId, eventType);
         } catch (SQLException e) {
             logger.error(e.getMessage());
             return Results.with(e.getMessage(), Status.SERVER_ERROR);

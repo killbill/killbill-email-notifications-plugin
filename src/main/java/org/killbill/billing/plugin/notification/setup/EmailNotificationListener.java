@@ -189,7 +189,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
 
         try {
-            registeredEventType = this.dao.getEventType(kbAccountId,kbTenantId,eventType);
+            registeredEventType = this.dao.getEventTypePerAccount(kbAccountId,kbTenantId,eventType);
         } catch (SQLException e) {
             logService.log(LogService.LOG_ERROR, String.format("Error retrieving email notification event registry: %s",e.getMessage()));
             return false;
