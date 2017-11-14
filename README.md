@@ -11,6 +11,11 @@ Kill Bill compatibility
 | 0.2.y          | 0.16.z            |
 | 0.3.y          | 0.18.z            |
 
+Requirements
+------------
+
+The plugin needs a database. The latest version of the schema can be found [here](https://github.com/killbill/killbill-email-notifications-plugin/tree/master/src/main/resources/org/killbill/billing/plugin/notification/ddl.sql).
+
 ## Overview
 
 The plugin will listen to specific system bus events and notify customers through emails. The following events are currently processed and emails are sent to all the emails associated with the account:
@@ -21,6 +26,43 @@ The plugin will listen to specific system bus events and notify customers throug
 * Payment Refund: the customer will receive an email after a payment refund was completed
 * Subscription Cancellation: the customer will receive an email at the time a subscription was requested to be canceled
 * Subscription Cancellation: the customer will receive an email at the effective date of the subscription cancellation
+
+Notice that in order to be able to be notified via email the account must be configured to permit such event(s). 
+
+### Configuring permitted events
+
+There are two ways to configure the permitted event(s):
+
+* Can be specified on a per tenant basis
+* Can be specified per account.
+
+#### Per tenant
+
+```
+curl -v \
+     -X POST \
+     -u admin:password \
+     -H 'X-Killbill-ApiKey: bob' \
+     -H 'X-Killbill-ApiSecret: lazar' \
+     -H 'X-Killbill-CreatedBy: admin' \
+     -H 'Content-Type: text/plain' \
+     -d 'org.killbill.billing.plugin.email-notifications.defaultEvents=INVOICE_PAYMENT_SUCCESS,SUBSCRIPTION_CANCEL' \
+     http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications
+```
+
+#### Per account
+
+```
+curl -v \
+     -X POST \
+     -u admin:password \
+     -H 'X-Killbill-ApiKey: bob' \
+     -H 'X-Killbill-ApiSecret: lazar' \
+     -H 'X-Killbill-CreatedBy: admin' \
+     -H 'Content-Type: application/json' \
+     -d '["INVOICE_NOTIFICATION","INVOICE_CREATION","INVOICE_PAYMENT_SUCCESS","INVOICE_PAYMENT_FAILED","SUBSCRIPTION_CANCEL"]' \
+     http://127.0.0.1:8080/plugins/killbill-email-notifications/accounts/{accountId}
+```
 
 ## Multi-tenancy Configuration
 
