@@ -61,7 +61,7 @@ curl -v \
      -H 'X-Killbill-CreatedBy: admin' \
      -H 'Content-Type: application/json' \
      -d '["INVOICE_NOTIFICATION","INVOICE_CREATION","INVOICE_PAYMENT_SUCCESS","INVOICE_PAYMENT_FAILED","SUBSCRIPTION_CANCEL"]' \
-     http://127.0.0.1:8080/plugins/killbill-email-notifications/accounts/{accountId}
+     http://127.0.0.1:8080/plugins/killbill-email-notifications/v1/accounts/{accountId}
 ```
 
 ## Multi-tenancy Configuration
