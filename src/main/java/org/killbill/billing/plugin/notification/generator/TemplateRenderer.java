@@ -89,6 +89,10 @@ public class TemplateRenderer {
         return getEmailContent(TemplateType.SUBSCRIPTION_CANCELLATION_EFFECTIVE, account, subscription, null, null, context);
     }
 
+    public EmailContent generateEmailForInvoiceCreation(final AccountData account, final Invoice invoice, final TenantContext context)throws IOException, TenantApiException {
+        return getEmailContent(TemplateType.INVOICE_CREATION, account, null, invoice, null, context);
+    }
+
     private EmailContent getEmailContent(final TemplateType templateType, final AccountData account, @Nullable Subscription subscription, @Nullable final Invoice invoice, @Nullable final PaymentTransaction paymentTransaction, final TenantContext context) throws IOException, TenantApiException {
 
         final String accountLocale = Strings.emptyToNull(account.getLocale());

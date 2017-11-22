@@ -66,7 +66,7 @@ public class TestEmailNotificationServlet extends TestWithEmbeddedDBBase {
         eventTypes.add(ExtBusEventType.SUBSCRIPTION_CANCEL);
 
         EmailNotificationServlet servlet =  new EmailNotificationServlet(dataSource,clock);
-        Result result = servlet.hello();
+        Result result = servlet.isListening();
         Assert.assertEquals(result.status().get().value(),200);
 
         result = servlet.getEventTypesPerAccount(kbAccountId, buildTenant(kbTenantId), event);

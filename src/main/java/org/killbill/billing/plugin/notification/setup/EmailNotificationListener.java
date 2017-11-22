@@ -148,6 +148,9 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
                     sendEmailForCancelledSubscription(account, killbillEvent, context);
                     break;
 
+                case INVOICE_CREATION:
+                    sendEmailForInvoiceCreation(account, killbillEvent, context);
+                    break;
                 default:
                     break;
             }
@@ -236,7 +239,6 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-
     private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException {
         final UUID invoiceId = killbillEvent.getObjectId();
         if (invoiceId == null) {
@@ -272,6 +274,16 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             }
         }
         if (emailContent != null) {
+            sendEmail(account, emailContent, context);
+        }
+    }
+
+    private void sendEmailForInvoiceCreation(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, TenantApiException, EmailException {
+        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_CREATION, String.format("Unexpected event %s", killbillEvent.getEventType()));
+
+        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(killbillEvent.getObjectId(), context);
+        if (invoice != null) {
+            final EmailContent emailContent = templateRenderer.generateEmailForInvoiceCreation(account, invoice, context);
             sendEmail(account, emailContent, context);
         }
     }

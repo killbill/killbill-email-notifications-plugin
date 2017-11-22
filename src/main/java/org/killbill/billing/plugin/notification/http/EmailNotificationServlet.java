@@ -67,9 +67,8 @@ public class EmailNotificationServlet {
 
     @GET
     @Path("/")
-    public Result hello() {
-        // Find me on http://127.0.0.1:8080/plugins/killbill-email-notifications
-        logger.info("Hello from email notification plugin!!!");
+    public Result isListening() {
+        logger.info("Acknowledge from email notification plugin!!!, I am active and listening");
         return Results.ok();
     }
 
