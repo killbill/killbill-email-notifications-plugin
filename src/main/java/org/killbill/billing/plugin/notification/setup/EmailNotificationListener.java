@@ -57,6 +57,7 @@ import org.killbill.billing.payment.api.TransactionStatus;
 import org.killbill.billing.payment.api.TransactionType;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.email.EmailSender;
+import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.ResourceBundleFactory;
 import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
@@ -156,8 +157,10 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             }
 
             logService.log(LogService.LOG_INFO, String.format("Received event %s for object type = %s, id = %s",
-                    killbillEvent.getEventType(), killbillEvent.getObjectType(), killbillEvent.getObjectId()));
+                                                              killbillEvent.getEventType(), killbillEvent.getObjectType(), killbillEvent.getObjectId()));
 
+        } catch (final EmailNotificationException e) {
+            logService.log(LogService.LOG_WARNING, e.getMessage(), e);
         } catch (final AccountApiException e) {
             logService.log(LogService.LOG_WARNING, String.format("Unable to find account: %s", killbillEvent.getAccountId()), e);
         } catch (InvoiceApiException e) {
@@ -206,7 +209,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         return true;
     }
 
-    private void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException, TenantApiException {
+    private void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException, TenantApiException, EmailNotificationException {
 
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_NOTIFICATION, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
@@ -226,7 +229,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-    private void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException, TenantApiException {
+    private void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException, TenantApiException, EmailNotificationException {
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.SUBSCRIPTION_CANCEL, String.format("Unexpected event %s", killbillEvent.getEventType()));
         final UUID subscriptionId = killbillEvent.getObjectId();
 
@@ -239,7 +242,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException {
+    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException, EmailNotificationException {
         final UUID invoiceId = killbillEvent.getObjectId();
         if (invoiceId == null) {
             return;
@@ -278,7 +281,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-    private void sendEmailForInvoiceCreation(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, TenantApiException, EmailException {
+    private void sendEmailForInvoiceCreation(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, TenantApiException, EmailException, EmailNotificationException {
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_CREATION, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
         final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(killbillEvent.getObjectId(), context);
