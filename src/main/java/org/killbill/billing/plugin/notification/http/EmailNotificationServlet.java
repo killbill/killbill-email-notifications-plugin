@@ -68,7 +68,7 @@ public class EmailNotificationServlet {
     @GET
     @Path("/")
     public Result isListening() {
-        logger.info("Acknowledge from email notification plugin!!!, I am active and listening");
+        logger.debug("Acknowledge from email notification plugin!!!, I am active and listening");
         return Results.ok();
     }
 

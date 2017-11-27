@@ -285,6 +285,9 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         if (invoice != null) {
             final EmailContent emailContent = templateRenderer.generateEmailForInvoiceCreation(account, invoice, context);
             sendEmail(account, emailContent, context);
+        } else {
+            logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s. Invoice not found for object %s",killbillEvent.getAccountId().toString(),
+                                                                 killbillEvent.getObjectId().toString()));
         }
     }
 

@@ -20,6 +20,7 @@ The plugin needs a database. The latest version of the schema can be found [here
 
 The plugin will listen to specific system bus events and notify customers through emails. The following events are currently processed and emails are sent to all the emails associated with the account:
 
+* Invoice Creation: the customer will receive an email informing that a new invoice is available.
 * Upcoming invoices: the customer will receive an email about upcoming invoices (the time at which to send the email is configured through the Kill Bill system property `org.killbill.invoice.dryRunNotificationSchedule`)
 * Successful Payment: the customer will receive an email after each successful payment
 * Payment Failure: the customer will receive an email after each failed payment
@@ -70,8 +71,9 @@ curl -v \
 
 The plugin can be ran on a set of Kill Bill multi-tenant instances. The various templates and translation files can be uploaded on a per tenant basis using the following keys (for instance with a Locale `en_US`):
 
-Note that the approcah taken here has been to create on template per locale and per type (as opposed to one template per type with an additional set of translation string bundles for each locale):
+Note that the approach taken here has been to create on template per locale and per type (as opposed to one template per type with an additional set of translation string bundles for each locale):
 
+* Template for invoice creation: `killbill-email-notifications:INVOICE_CREATION_en_US` 
 * Template for upcoming invoices: `killbill-email-notifications:UPCOMING_INVOICE_en_US` 
 * Template for failed payments: `killbill-email-notifications:FAILED_PAYMENT_en_US`
 * Template for subscription cancellation (requested date): `killbill-email-notifications:SUBSCRIPTION_CANCELLATION_REQUESTED_en_US`
@@ -89,7 +91,7 @@ Currently, there is no caching for these templates within Kill Bill, but the plu
 
 ### CURL Examples
 
-For instnace to upload a template for the next upcoming invoice and for a locale `en_US`:
+For instance to upload a template for the next upcoming invoice and for a locale `en_US`:
 
 1. Create the template `/tmp/UpcomingInvoice.mustache`:
 
