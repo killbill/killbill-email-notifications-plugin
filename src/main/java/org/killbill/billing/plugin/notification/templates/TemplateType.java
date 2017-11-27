@@ -27,7 +27,8 @@ public enum TemplateType {
     FAILED_PAYMENT("FailedPayment.mustache", "failedPaymentSubject"),
     PAYMENT_REFUND("PaymentRefund.mustache", "paymentRefundSubject"),
     SUBSCRIPTION_CANCELLATION_REQUESTED("SubscriptionCancellationRequested.mustache", "subscriptionCancellationRequestedSubject"),
-    SUBSCRIPTION_CANCELLATION_EFFECTIVE("SubscriptionCancellationEffective.mustache", "subscriptionCancellationEffectiveSubject");
+    SUBSCRIPTION_CANCELLATION_EFFECTIVE("SubscriptionCancellationEffective.mustache", "subscriptionCancellationEffectiveSubject"),
+    INVOICE_CREATION("InvoiceCreation.mustache", "invoiceCreationSubject");
 
     final String defaultTemplateName;
     final String subjectKeyName;
