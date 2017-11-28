@@ -19,6 +19,7 @@ package org.killbill.billing.plugin.notification.email;
 
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.mail.EmailException;
+import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogService;
 import org.slf4j.Logger;
@@ -44,7 +45,7 @@ public class TestEmailSender {
     }
 
     @Test(enabled=false)
-    public void foo() throws IOException, EmailException {
+    public void foo() throws IOException, EmailException, EmailNotificationException {
         LogService logService = new LogService() {
             @Override
             public void log(int i, String s) {

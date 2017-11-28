@@ -23,10 +23,21 @@ import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.SimpleEmail;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
+import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.osgi.service.log.LogService;
 
 import java.io.IOException;
 import java.util.List;
+
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+
+import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.EMAIL_ADDRESS_INVALID;
+import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.RECIPIENT_EMAIL_ADDRESS_REQUIRED;
+import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.SENDER_EMAIL_ADDRESS_REQUIRED;
+import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.SMTP_AUTHENTICATION_REQUIRED;
+import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.SMTP_HOSTNAME_REQUIRED;
+import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.SUBJECT_REQUIRED;
 
 public class EmailSender {
 
@@ -81,13 +92,13 @@ public class EmailSender {
 
     }
 
-    public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody) throws EmailException {
+    public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody) throws EmailException, EmailNotificationException {
         final HtmlEmail email = new HtmlEmail();
         email.setHtmlMsg(htmlBody);
         sendEmail(to, cc, subject, email);
     }
 
-    public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body) throws IOException, EmailException {
+    public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body) throws IOException, EmailException, EmailNotificationException {
 
         logService.log(LogService.LOG_INFO, String.format("Sending email to = %s, cc= %s, subject = %s body = [%s]",
                 to,
@@ -100,11 +111,13 @@ public class EmailSender {
         sendEmail(to, cc, subject, email);
     }
 
-    private void sendEmail(final List<String> to, final List<String> cc, final String subject, final Email email) throws EmailException {
+    private void sendEmail(final List<String> to, final List<String> cc, final String subject, final Email email) throws EmailException, EmailNotificationException {
 
         if (logOnly) {
             return;
         }
+
+        validateEmailFields(to, cc, subject, email);
 
         email.setSmtpPort(useSmtpPort);
         if (useSmtpAuth) {
@@ -131,5 +144,47 @@ public class EmailSender {
 
         logService.log(LogService.LOG_INFO, String.format("Sending email to %s, cc %s, subject %s", to, cc, subject));
         email.send();
+    }
+
+    private void validateEmailFields(final List<String> to, final List<String> cc, final String subject, final Email email) throws EmailNotificationException {
+
+        if (to == null || to.size() == 0 || to.get(0).trim().isEmpty()){
+            throw new EmailNotificationException(RECIPIENT_EMAIL_ADDRESS_REQUIRED);
+        }
+
+        if (from == null || from.trim().isEmpty()){
+            throw new EmailNotificationException(SENDER_EMAIL_ADDRESS_REQUIRED);
+        }
+
+        if (useSmtpAuth && ( (smtpUserName == null || smtpUserName.trim().isEmpty()) || (smtpUserPassword == null || smtpUserPassword.trim().isEmpty()) )){
+            throw new EmailNotificationException(SMTP_AUTHENTICATION_REQUIRED);
+        }
+
+        if (subject == null || subject.trim().isEmpty()){
+            throw new EmailNotificationException(SUBJECT_REQUIRED);
+        }
+
+        if (smtpServerName == null || smtpServerName.trim().isEmpty()){
+            throw new EmailNotificationException(SMTP_HOSTNAME_REQUIRED);
+        }
+
+        validateEmailAddress(from);
+
+        for(String recipient: to){
+            validateEmailAddress(recipient);
+        }
+
+        for(String recipient: cc){
+            validateEmailAddress(recipient);
+        }
+    }
+
+    private void validateEmailAddress(String email) throws EmailNotificationException {
+        try {
+            InternetAddress emailAddr = new InternetAddress(email);
+            emailAddr.validate();
+        } catch (AddressException ex) {
+            throw new EmailNotificationException(ex, EMAIL_ADDRESS_INVALID, email);
+        }
     }
 }
