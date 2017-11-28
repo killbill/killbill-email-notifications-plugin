@@ -30,6 +30,28 @@ The plugin will listen to specific system bus events and notify customers throug
 
 Notice that in order to be able to be notified via email the account must be configured to permit such event(s). 
 
+### Configuring SMTP properties
+SMTP properties for the email notification plugin should be configured using the following call:
+
+```
+curl -v \
+-X POST \
+-u admin:password \
+-H 'X-Killbill-ApiKey: bob' \
+-H 'X-Killbill-ApiSecret: lazar' \
+-H 'X-Killbill-CreatedBy: admin' \
+-H 'Content-Type: text/plain' \
+-d 'org.killbill.billing.plugin.email-notifications.defaultEvents=INVOICE_PAYMENT_SUCCESS,SUBSCRIPTION_CANCEL
+org.killbill.billing.plugin.email-notifications.smtp.host=127.0.0.1
+org.killbill.billing.plugin.email-notifications.smtp.port=25
+org.killbill.billing.plugin.email-notifications.smtp.useAuthentication=true
+org.killbill.billing.plugin.email-notifications.smtp.userName=uuuuuu
+org.killbill.billing.plugin.email-notifications.smtp.password=zzzzzz
+org.killbill.billing.plugin.email-notifications.smtp.useSSL=false
+org.killbill.billing.plugin.email-notifications.smtp.defaultSender=xxx@yyy.com' \
+http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications
+```
+
 ### Configuring permitted events
 
 There are two ways to configure the permitted event(s):
@@ -41,14 +63,21 @@ There are two ways to configure the permitted event(s):
 
 ```
 curl -v \
-     -X POST \
-     -u admin:password \
-     -H 'X-Killbill-ApiKey: bob' \
-     -H 'X-Killbill-ApiSecret: lazar' \
-     -H 'X-Killbill-CreatedBy: admin' \
-     -H 'Content-Type: text/plain' \
-     -d 'org.killbill.billing.plugin.email-notifications.defaultEvents=INVOICE_PAYMENT_SUCCESS,SUBSCRIPTION_CANCEL' \
-     http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications
+-X POST \
+-u admin:password \
+-H 'X-Killbill-ApiKey: bob' \
+-H 'X-Killbill-ApiSecret: lazar' \
+-H 'X-Killbill-CreatedBy: admin' \
+-H 'Content-Type: text/plain' \
+-d 'org.killbill.billing.plugin.email-notifications.defaultEvents=INVOICE_PAYMENT_SUCCESS,SUBSCRIPTION_CANCEL
+org.killbill.billing.plugin.email-notifications.smtp.host=127.0.0.1
+org.killbill.billing.plugin.email-notifications.smtp.port=25
+org.killbill.billing.plugin.email-notifications.smtp.useAuthentication=true
+org.killbill.billing.plugin.email-notifications.smtp.userName=uuuuuu
+org.killbill.billing.plugin.email-notifications.smtp.password=zzzzzz
+org.killbill.billing.plugin.email-notifications.smtp.useSSL=false
+org.killbill.billing.plugin.email-notifications.smtp.defaultSender=xxx@yyy.com' \
+http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications
 ```
 
 #### Per account

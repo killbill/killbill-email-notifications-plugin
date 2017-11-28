@@ -24,6 +24,7 @@ import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.SimpleEmail;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
+import org.killbill.billing.plugin.notification.setup.EmailNotificationConfiguration;
 import org.osgi.service.log.LogService;
 
 import java.io.IOException;
@@ -61,6 +62,8 @@ public class EmailSender {
     private final String smtpServerName;
     private final String from;
     private final boolean useSSL;
+
+    private SmtpProperties smtp;
     private final LogService logService;
     private final boolean logOnly;
 
@@ -87,9 +90,30 @@ public class EmailSender {
         this.logService = logService;
         this.logOnly = logOnly;
 
-        logService.log(LogService.LOG_INFO, String.format("EmailSender configured with serverName = %s, serverPort = %d, from = %s, logOnly = %s",
-                smtpServerName, useSmtpPort, from, logOnly));
+    }
 
+    public void setSmtp(){ setSmtp(null); }
+
+    public void setSmtp(final SmtpProperties smtp) {
+        if (smtp == null){
+            this.smtp = new SmtpProperties(this.smtpServerName, this.useSmtpPort, this.useSmtpAuth,
+                                           this.smtpUserName, this.smtpUserPassword, this.useSSL, this.from);
+        }
+
+        if (smtp.getHost() == null && smtpServerName != null){
+            smtp.setHost(smtpServerName);
+            smtp.setDefaultSender(this.from);
+            smtp.setPort(this.useSmtpPort);
+            smtp.setPassword(this.smtpUserPassword);
+            smtp.setUserName(this.smtpUserName);
+            smtp.setUseAuthentication(this.useSmtpAuth);
+            smtp.setUseSSL(this.useSSL);
+        }
+
+        logService.log(LogService.LOG_INFO, String.format("EmailSender configured with serverName = %s, serverPort = %d, from = %s, logOnly = %s",
+                                                          smtp.getHost(), smtp.getPort(), smtp.getFrom(), logOnly));
+
+        this.smtp = smtp;
     }
 
     public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody) throws EmailException, EmailNotificationException {
@@ -105,7 +129,6 @@ public class EmailSender {
                 JOINER_ON_COMMA.join(cc),
                 subject,
                 body));
-
         final SimpleEmail email = new SimpleEmail();
         email.setMsg(body);
         sendEmail(to, cc, subject, email);
@@ -119,12 +142,12 @@ public class EmailSender {
 
         validateEmailFields(to, cc, subject, email);
 
-        email.setSmtpPort(useSmtpPort);
-        if (useSmtpAuth) {
-            email.setAuthentication(smtpUserName, smtpUserPassword);
+        email.setSmtpPort(smtp.getPort());
+        if (smtp.isUseAuthentication()) {
+            email.setAuthentication(smtp.getUserName(), smtp.getPassword());
         }
-        email.setHostName(smtpServerName);
-        email.setFrom(from);
+        email.setHostName(smtp.getHost());
+        email.setFrom(smtp.getFrom());
 
         email.setSubject(subject);
 
@@ -140,7 +163,7 @@ public class EmailSender {
             }
         }
 
-        email.setSSL(useSSL);
+        email.setSSL(smtp.isUseSSL());
 
         logService.log(LogService.LOG_INFO, String.format("Sending email to %s, cc %s, subject %s", to, cc, subject));
         email.send();
@@ -152,11 +175,11 @@ public class EmailSender {
             throw new EmailNotificationException(RECIPIENT_EMAIL_ADDRESS_REQUIRED);
         }
 
-        if (from == null || from.trim().isEmpty()){
+        if (smtp.getFrom() == null || smtp.getFrom().trim().isEmpty()){
             throw new EmailNotificationException(SENDER_EMAIL_ADDRESS_REQUIRED);
         }
 
-        if (useSmtpAuth && ( (smtpUserName == null || smtpUserName.trim().isEmpty()) || (smtpUserPassword == null || smtpUserPassword.trim().isEmpty()) )){
+        if (smtp.isUseAuthentication() && ( (smtp.getUserName() == null || smtp.getUserName().trim().isEmpty()) || (smtp.getPassword() == null || smtp.getPassword().trim().isEmpty()) )){
             throw new EmailNotificationException(SMTP_AUTHENTICATION_REQUIRED);
         }
 
@@ -164,11 +187,11 @@ public class EmailSender {
             throw new EmailNotificationException(SUBJECT_REQUIRED);
         }
 
-        if (smtpServerName == null || smtpServerName.trim().isEmpty()){
+        if (smtp.getHost() == null || smtp.getHost().trim().isEmpty()){
             throw new EmailNotificationException(SMTP_HOSTNAME_REQUIRED);
         }
 
-        validateEmailAddress(from);
+        validateEmailAddress(smtp.getFrom());
 
         for(String recipient: to){
             validateEmailAddress(recipient);
@@ -187,4 +210,5 @@ public class EmailSender {
             throw new EmailNotificationException(ex, EMAIL_ADDRESS_INVALID, email);
         }
     }
+
 }
