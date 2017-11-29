@@ -64,8 +64,7 @@ public class TestEmailSender {
         };
 
         EmailSender sender = new EmailSender(TEST_SMTP_SERVER_NAME, TEST_SMPT_SERVER_PORT, TEST_SMTP_USER, TEST_SMTP_PWD, TEST_SMTP_FROM, true, false, logService, false);
-        sender.setSmtp();
         final String to = "something_that_works@gmail.com";
-        sender.sendPlainTextEmail(ImmutableList.of(to), ImmutableList.<String>of(), "coucou", "body");
+        sender.sendPlainTextEmail(ImmutableList.of(to), ImmutableList.<String>of(), "coucou", "body", null);
     }
 }

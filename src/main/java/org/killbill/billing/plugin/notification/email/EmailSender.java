@@ -63,7 +63,6 @@ public class EmailSender {
     private final String from;
     private final boolean useSSL;
 
-    private SmtpProperties smtp;
     private final LogService logService;
     private final boolean logOnly;
 
@@ -92,11 +91,10 @@ public class EmailSender {
 
     }
 
-    public void setSmtp(){ setSmtp(null); }
-
-    public void setSmtp(final SmtpProperties smtp) {
+    // Backward compatibility. If no configuration exists, then reuse Kill Bill email properties
+    public SmtpProperties precheckSmtp(SmtpProperties smtp) {
         if (smtp == null){
-            this.smtp = new SmtpProperties(this.smtpServerName, this.useSmtpPort, this.useSmtpAuth,
+            smtp = new SmtpProperties(this.smtpServerName, this.useSmtpPort, this.useSmtpAuth,
                                            this.smtpUserName, this.smtpUserPassword, this.useSSL, this.from);
         }
 
@@ -113,16 +111,16 @@ public class EmailSender {
         logService.log(LogService.LOG_INFO, String.format("EmailSender configured with serverName = %s, serverPort = %d, from = %s, logOnly = %s",
                                                           smtp.getHost(), smtp.getPort(), smtp.getFrom(), logOnly));
 
-        this.smtp = smtp;
+        return smtp;
     }
 
-    public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody) throws EmailException, EmailNotificationException {
+    public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody, final SmtpProperties smtp) throws EmailException, EmailNotificationException {
         final HtmlEmail email = new HtmlEmail();
         email.setHtmlMsg(htmlBody);
-        sendEmail(to, cc, subject, email);
+        sendEmail(to, cc, subject, email, smtp);
     }
 
-    public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body) throws IOException, EmailException, EmailNotificationException {
+    public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body, final SmtpProperties smtp) throws IOException, EmailException, EmailNotificationException {
 
         logService.log(LogService.LOG_INFO, String.format("Sending email to = %s, cc= %s, subject = %s body = [%s]",
                 to,
@@ -131,16 +129,16 @@ public class EmailSender {
                 body));
         final SimpleEmail email = new SimpleEmail();
         email.setMsg(body);
-        sendEmail(to, cc, subject, email);
+        sendEmail(to, cc, subject, email, precheckSmtp(smtp));
     }
 
-    private void sendEmail(final List<String> to, final List<String> cc, final String subject, final Email email) throws EmailException, EmailNotificationException {
+    private void sendEmail(final List<String> to, final List<String> cc, final String subject, final Email email, final SmtpProperties smtp) throws EmailException, EmailNotificationException {
 
         if (logOnly) {
             return;
         }
 
-        validateEmailFields(to, cc, subject, email);
+        validateEmailFields(to, cc, subject, smtp);
 
         email.setSmtpPort(smtp.getPort());
         if (smtp.isUseAuthentication()) {
@@ -169,7 +167,7 @@ public class EmailSender {
         email.send();
     }
 
-    private void validateEmailFields(final List<String> to, final List<String> cc, final String subject, final Email email) throws EmailNotificationException {
+    private void validateEmailFields(final List<String> to, final List<String> cc, final String subject, final SmtpProperties smtp) throws EmailNotificationException {
 
         if (to == null || to.size() == 0 || to.get(0).trim().isEmpty()){
             throw new EmailNotificationException(RECIPIENT_EMAIL_ADDRESS_REQUIRED);
