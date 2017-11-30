@@ -93,10 +93,6 @@ public class EmailSender {
 
     // Backward compatibility. If no configuration exists, then reuse Kill Bill email properties
     public SmtpProperties precheckSmtp(SmtpProperties smtp) {
-        if (smtp == null){
-            smtp = new SmtpProperties(this.smtpServerName, this.useSmtpPort, this.useSmtpAuth,
-                                           this.smtpUserName, this.smtpUserPassword, this.useSSL, this.from);
-        }
 
         if (smtp.getHost() == null && smtpServerName != null){
             smtp.setHost(smtpServerName);
@@ -117,7 +113,7 @@ public class EmailSender {
     public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody, final SmtpProperties smtp) throws EmailException, EmailNotificationException {
         final HtmlEmail email = new HtmlEmail();
         email.setHtmlMsg(htmlBody);
-        sendEmail(to, cc, subject, email, smtp);
+        sendEmail(to, cc, subject, email, precheckSmtp(smtp));
     }
 
     public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body, final SmtpProperties smtp) throws IOException, EmailException, EmailNotificationException {
