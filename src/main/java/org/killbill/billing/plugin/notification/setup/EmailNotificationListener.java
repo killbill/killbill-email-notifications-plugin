@@ -57,6 +57,7 @@ import org.killbill.billing.payment.api.TransactionStatus;
 import org.killbill.billing.payment.api.TransactionType;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.email.EmailSender;
+import org.killbill.billing.plugin.notification.email.SmtpProperties;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.ResourceBundleFactory;
 import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
@@ -294,7 +295,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-    private void sendEmail(final Account account, final EmailContent emailContent, final TenantContext context) throws IOException, EmailException {
+    private void sendEmail(final Account account, final EmailContent emailContent, final TenantContext context) throws IOException, EmailException, EmailNotificationException {
         final Iterable<String> cc = Iterables.transform(osgiKillbillAPI.getAccountUserApi().getEmails(account.getId(), context), new Function<AccountEmail, String>() {
             @Nullable
             @Override
@@ -302,7 +303,8 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
                 return input.getEmail();
             }
         });
-        emailSender.sendPlainTextEmail(ImmutableList.of(account.getEmail()), ImmutableList.copyOf(cc), emailContent.getSubject(), emailContent.getBody());
+
+        emailSender.sendPlainTextEmail(ImmutableList.of(account.getEmail()), ImmutableList.copyOf(cc), emailContent.getSubject(), emailContent.getBody(), getConfiguration(context).getSmtp());
     }
 
     private static final class EmailNotificationContext implements TenantContext {
@@ -359,5 +361,9 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         public List<PlanPhasePriceOverride> getPlanPhasePriceOverrides() {
             return null;
         }
+    }
+
+    private EmailNotificationConfiguration getConfiguration(final TenantContext context){
+        return emailNotificationConfigurationHandler.getConfigurable(context.getTenantId());
     }
 }

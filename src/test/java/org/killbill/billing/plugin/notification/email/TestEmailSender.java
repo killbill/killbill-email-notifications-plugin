@@ -19,6 +19,8 @@ package org.killbill.billing.plugin.notification.email;
 
 import com.google.common.collect.ImmutableList;
 import org.apache.commons.mail.EmailException;
+import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
+import org.mockito.Mockito;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogService;
 import org.slf4j.Logger;
@@ -44,7 +46,7 @@ public class TestEmailSender {
     }
 
     @Test(enabled=false)
-    public void foo() throws IOException, EmailException {
+    public void foo() throws IOException, EmailException, EmailNotificationException {
         LogService logService = new LogService() {
             @Override
             public void log(int i, String s) {
@@ -64,6 +66,6 @@ public class TestEmailSender {
 
         EmailSender sender = new EmailSender(TEST_SMTP_SERVER_NAME, TEST_SMPT_SERVER_PORT, TEST_SMTP_USER, TEST_SMTP_PWD, TEST_SMTP_FROM, true, false, logService, false);
         final String to = "something_that_works@gmail.com";
-        sender.sendPlainTextEmail(ImmutableList.of(to), ImmutableList.<String>of(), "coucou", "body");
+        sender.sendPlainTextEmail(ImmutableList.of(to), ImmutableList.<String>of(), "coucou", "body", Mockito.mock(SmtpProperties.class));
     }
 }

@@ -21,7 +21,16 @@ public enum EmailNotificationErrorCode {
 
     UNKNOWN_ERROR(-1,"Unknown error occurs"),
     TRANSLATION_INVALID(100001, "Translation for locale [%s] isn't found"),
-    TEMPLATE_INVALID(1000002, "Template for locale [%s] isn't found"),;
+    TEMPLATE_INVALID(1000002, "Template for locale [%s] isn't found"),
+
+    RECIPIENT_EMAIL_ADDRESS_REQUIRED(1000003, "Recipient address is required, but none is provided."),
+    SENDER_EMAIL_ADDRESS_REQUIRED(1000004, "Sender address is required, but none is provided."),
+    SUBJECT_REQUIRED(1000005, "Subject is required, but none is provided."),
+    SMTP_HOSTNAME_REQUIRED(1000006, "Host name is required, but none is provided."),
+    SMTP_AUTHENTICATION_REQUIRED(1000007, "Authentication credentials are required, but none is provided."),
+
+    EMAIL_ADDRESS_INVALID(1000010, "Email address %s is malformed."),;
+
 
     private final int code;
     private final String format;
