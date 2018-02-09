@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2014-2017 Groupon, Inc
+ * Copyright 2014-2017 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -47,6 +47,7 @@ import org.killbill.billing.notification.plugin.api.NotificationPluginApiRetryEx
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillClock;
+import org.killbill.billing.osgi.libs.killbill.OSGIKillbillDataSource;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillEventDispatcher;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
 import org.killbill.billing.payment.api.Payment;
@@ -57,9 +58,13 @@ import org.killbill.billing.payment.api.TransactionStatus;
 import org.killbill.billing.payment.api.TransactionType;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.email.EmailSender;
+import org.killbill.billing.plugin.notification.email.SmtpProperties;
+import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.ResourceBundleFactory;
 import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
+import org.killbill.billing.plugin.notification.dao.gen.tables.pojos.EmailNotificationsConfiguration;
+import org.killbill.billing.plugin.notification.dao.ConfigurationDao;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.osgi.service.log.LogService;
@@ -67,6 +72,7 @@ import org.skife.config.TimeSpan;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -82,9 +88,10 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
     private final OSGIConfigPropertiesService configProperties;
     private final EmailSender emailSender;
     private final OSGIKillbillClock clock;
+    private final ConfigurationDao dao;
+    private final EmailNotificationConfigurationHandler emailNotificationConfigurationHandler;
 
-
-    private final ImmutableList<ExtBusEventType> EVENTS_TO_CONSIDER = new ImmutableList.Builder()
+    public static final ImmutableList<ExtBusEventType> EVENTS_TO_CONSIDER = new ImmutableList.Builder()
             .add(ExtBusEventType.INVOICE_NOTIFICATION)
             .add(ExtBusEventType.INVOICE_CREATION)
             .add(ExtBusEventType.INVOICE_PAYMENT_SUCCESS)
@@ -93,19 +100,27 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             .build();
 
 
-    public EmailNotificationListener(final OSGIKillbillClock clock, final OSGIKillbillLogService logService, final OSGIKillbillAPI killbillAPI, final OSGIConfigPropertiesService configProperties) {
+    public EmailNotificationListener(final OSGIKillbillClock clock, final OSGIKillbillLogService logService, final OSGIKillbillAPI killbillAPI, final OSGIConfigPropertiesService configProperties,
+                                     OSGIKillbillDataSource dataSource, EmailNotificationConfigurationHandler emailNotificationConfigurationHandler) throws SQLException {
         this.logService = logService;
         this.osgiKillbillAPI = killbillAPI;
         this.configProperties = configProperties;
         this.clock = clock;
         this.emailSender = new EmailSender(configProperties, logService);
         this.templateRenderer = new TemplateRenderer(new MustacheTemplateEngine(), new ResourceBundleFactory(killbillAPI.getTenantUserApi(), logService), killbillAPI.getTenantUserApi(), logService);
+        this.dao = new ConfigurationDao(dataSource.getDataSource());
+        this.emailNotificationConfigurationHandler = emailNotificationConfigurationHandler;
     }
 
     @Override
     public void handleKillbillEvent(final ExtBusEvent killbillEvent) {
 
         if (!EVENTS_TO_CONSIDER.contains(killbillEvent.getEventType())) {
+            return;
+        }
+
+        if(!isEventTypeAllowed(killbillEvent.getAccountId(),killbillEvent.getTenantId(),killbillEvent.getEventType()))
+        {
             return;
         }
 
@@ -136,13 +151,18 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
                     sendEmailForCancelledSubscription(account, killbillEvent, context);
                     break;
 
+                case INVOICE_CREATION:
+                    sendEmailForInvoiceCreation(account, killbillEvent, context);
+                    break;
                 default:
                     break;
             }
 
             logService.log(LogService.LOG_INFO, String.format("Received event %s for object type = %s, id = %s",
-                    killbillEvent.getEventType(), killbillEvent.getObjectType(), killbillEvent.getObjectId()));
+                                                              killbillEvent.getEventType(), killbillEvent.getObjectType(), killbillEvent.getObjectId()));
 
+        } catch (final EmailNotificationException e) {
+            logService.log(LogService.LOG_WARNING, e.getMessage(), e);
         } catch (final AccountApiException e) {
             logService.log(LogService.LOG_WARNING, String.format("Unable to find account: %s", killbillEvent.getAccountId()), e);
         } catch (InvoiceApiException e) {
@@ -168,7 +188,32 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-    private void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException, TenantApiException {
+    private boolean isEventTypeAllowed(final UUID kbAccountId, final UUID kbTenantId, final ExtBusEventType eventType)
+    {
+        final EmailNotificationsConfiguration registeredEventType;
+        final EmailNotificationConfiguration configuration = emailNotificationConfigurationHandler.getConfigurable(kbTenantId);
+
+        if (configuration.getEventTypes().contains(eventType.toString()))
+        {
+            return true;
+        }
+
+        try {
+            registeredEventType = this.dao.getEventTypePerAccount(kbAccountId,kbTenantId,eventType);
+        } catch (SQLException e) {
+            logService.log(LogService.LOG_ERROR, String.format("Error retrieving email notification event registry: %s",e.getMessage()));
+            return false;
+        }
+
+        if (registeredEventType == null) {
+            logService.log(LogService.LOG_WARNING, String.format("Registration of event %s is not available for account %s.",eventType.toString(),kbAccountId));
+            return false;
+        }
+
+        return true;
+    }
+
+    private void sendEmailForUpComingInvoice(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws IOException, InvoiceApiException, EmailException, TenantApiException, EmailNotificationException {
 
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_NOTIFICATION, String.format("Unexpected event %s", killbillEvent.getEventType()));
 
@@ -188,7 +233,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-    private void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException, TenantApiException {
+    private void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException, TenantApiException, EmailNotificationException {
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.SUBSCRIPTION_CANCEL, String.format("Unexpected event %s", killbillEvent.getEventType()));
         final UUID subscriptionId = killbillEvent.getObjectId();
 
@@ -201,8 +246,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-
-    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException {
+    private void sendEmailForPayment(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, EmailException, PaymentApiException, TenantApiException, EmailNotificationException {
         final UUID invoiceId = killbillEvent.getObjectId();
         if (invoiceId == null) {
             return;
@@ -241,7 +285,20 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
     }
 
-    private void sendEmail(final Account account, final EmailContent emailContent, final TenantContext context) throws EmailException {
+    private void sendEmailForInvoiceCreation(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws InvoiceApiException, IOException, TenantApiException, EmailException, EmailNotificationException {
+        Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.INVOICE_CREATION, String.format("Unexpected event %s", killbillEvent.getEventType()));
+
+        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().getInvoice(killbillEvent.getObjectId(), context);
+        if (invoice != null) {
+            final EmailContent emailContent = templateRenderer.generateEmailForInvoiceCreation(account, invoice, context);
+            sendEmail(account, emailContent, context);
+        } else {
+            logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s. Invoice not found for object %s",killbillEvent.getAccountId().toString(),
+                                                                 killbillEvent.getObjectId().toString()));
+        }
+    }
+
+    private void sendEmail(final Account account, final EmailContent emailContent, final TenantContext context) throws IOException, EmailException, EmailNotificationException {
         final Iterable<String> cc = Iterables.transform(osgiKillbillAPI.getAccountUserApi().getEmails(account.getId(), context), new Function<AccountEmail, String>() {
             @Nullable
             @Override
@@ -249,7 +306,8 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
                 return input.getEmail();
             }
         });
-        emailSender.sendPlainTextEmail(ImmutableList.of(account.getEmail()), ImmutableList.copyOf(cc), emailContent.getSubject(), emailContent.getBody());
+
+        emailSender.sendPlainTextEmail(ImmutableList.of(account.getEmail()), ImmutableList.copyOf(cc), emailContent.getSubject(), emailContent.getBody(), getConfiguration(context).getSmtp());
     }
 
     private static final class EmailNotificationContext implements TenantContext {
@@ -313,5 +371,9 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         public List<PlanPhasePriceOverride> getPlanPhasePriceOverrides() {
             return null;
         }
+    }
+
+    private EmailNotificationConfiguration getConfiguration(final TenantContext context){
+        return emailNotificationConfigurationHandler.getConfigurable(context.getTenantId());
     }
 }

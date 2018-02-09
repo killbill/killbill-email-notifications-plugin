@@ -547,6 +547,10 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public void undoChangePlan(final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
+            }
+
+            @Override
             public Entitlement changePlanWithDate(final PlanPhaseSpecifier planPhaseSpecifier, final List<PlanPhasePriceOverride> list, final LocalDate localDate, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
                 return null;
             }
@@ -673,6 +677,16 @@ public class TestTemplateRenderer {
 
             @Override
             public UUID getLinkedItemId() {
+                return null;
+            }
+
+            @Override
+            public Integer getQuantity() {
+                return null;
+            }
+
+            @Override
+            public String getItemDetails() {
                 return null;
             }
 
@@ -882,6 +896,11 @@ public class TestTemplateRenderer {
 
             @Override
             public UUID getPaymentMethodId() {
+                return null;
+            }
+
+            @Override
+            public DateTime getReferenceTime() {
                 return null;
             }
 
