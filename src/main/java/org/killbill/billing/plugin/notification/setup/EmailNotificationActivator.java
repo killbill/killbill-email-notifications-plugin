@@ -52,12 +52,9 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         final EmailNotificationConfiguration globalConfiguration = emailNotificationConfigurationHandler.createConfigurable(configProperties.getProperties());
         emailNotificationConfigurationHandler.setDefaultConfigurable(globalConfiguration);
 
-        final PluginConfigurationEventHandler handler = new PluginConfigurationEventHandler(emailNotificationConfigurationHandler);
-        dispatcher.registerEventHandlers(handler);
 
         // Register an event listener (optional)
         emailNotificationListener = new EmailNotificationListener(clock, logService, killbillAPI, configProperties, dataSource, emailNotificationConfigurationHandler);
-        dispatcher.registerEventHandlers(emailNotificationListener);
 
         // Register a servlet (optional)
         final PluginApp pluginApp = new PluginAppBuilder(PLUGIN_NAME,
@@ -69,6 +66,7 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
                                                                           .build();
         final HttpServlet httpServlet = PluginApp.createServlet(pluginApp);
         registerServlet(context, httpServlet);
+        registerHandlers();
     }
 
     @Override
@@ -78,6 +76,19 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         // Do additional work on shutdown (optional)
     }
 
+
+    private void registerHandlers() {
+
+        final PluginConfigurationEventHandler configHandler = new PluginConfigurationEventHandler(emailNotificationConfigurationHandler);
+
+        dispatcher.registerEventHandlers(configHandler,
+                new OSGIKillbillEventDispatcher.OSGIFrameworkEventHandler() {
+                    @Override
+                    public void started() {
+                        dispatcher.registerEventHandlers(emailNotificationListener);
+                    }
+                });
+    }
 
     private void registerServlet(final BundleContext context, final HttpServlet servlet) {
         final Hashtable<String, String> props = new Hashtable<String, String>();
