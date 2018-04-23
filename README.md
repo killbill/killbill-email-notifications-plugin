@@ -118,9 +118,12 @@ The following Kill Bill endpoints can be used to upload the templates:
 
 Currently, there is no caching for these templates within Kill Bill, but the plugin *could* cache those (but then the multi-node scenario requires some great care with respect to cache invalidation).
 
-### CURL Examples
+### Email Templates
 
-For instance to upload a template for the next upcoming invoice and for a locale `en_US`:
+One can upload per-tenant email templates for various events using KB apis. At runtime the plugin will look at the configured templates and based on the `locale` associated with a given account, decide which one to take; the administrator should upload one template per event and type of `locale` supported. If a given `Account` does not have a `locale` specified, this will fail with a exception `Translation for locale XXX isn't found`.
+
+
+Let's look at an example to upload a templare for the next upcoming invoice and for a locale `en_US`:
 
 1. Create the template `/tmp/UpcomingInvoice.mustache`:
 
