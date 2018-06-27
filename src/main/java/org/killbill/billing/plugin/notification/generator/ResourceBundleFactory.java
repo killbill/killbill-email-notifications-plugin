@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -132,7 +133,13 @@ public class ResourceBundleFactory {
 
     private ResourceBundle getBundleFromPropertiesFile(final String propertiesFileName) {
         try {
-            final InputStream inputStream = this.getClass().getClassLoader().getResource(propertiesFileName).openStream();
+            final URL url = this.getClass().getClassLoader().getResource(propertiesFileName);
+
+            if (url == null){
+                return null;
+            }
+
+            final InputStream inputStream = url.openStream();
             if (inputStream == null) {
                 return null;
             } else {

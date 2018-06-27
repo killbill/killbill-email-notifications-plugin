@@ -24,6 +24,8 @@ import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.plugin.notification.email.EmailContent;
+import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
+import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.formatters.DefaultInvoiceFormatter;
 import org.killbill.billing.plugin.notification.generator.formatters.PaymentFormatter;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
@@ -38,12 +40,17 @@ import org.osgi.service.log.LogService;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+
+import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.TEMPLATE_INVALID;
+import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.TRANSLATION_INVALID;
 
 public class TemplateRenderer {
 
@@ -65,31 +72,35 @@ public class TemplateRenderer {
     }
 
 
-    public EmailContent generateEmailForUpComingInvoice(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException {
+    public EmailContent generateEmailForUpComingInvoice(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
         return getEmailContent(TemplateType.UPCOMING_INVOICE, account, null, invoice, null, context);
     }
 
-    public EmailContent generateEmailForSuccessfulPayment(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException {
+    public EmailContent generateEmailForSuccessfulPayment(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
         return getEmailContent(TemplateType.SUCCESSFUL_PAYMENT, account, null, invoice, null, context);
     }
 
-    public EmailContent generateEmailForFailedPayment(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException {
+    public EmailContent generateEmailForFailedPayment(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
         return getEmailContent(TemplateType.FAILED_PAYMENT, account, null, invoice, null, context);
     }
 
-    public EmailContent generateEmailForPaymentRefund(final AccountData account, final PaymentTransaction paymentTransaction, final TenantContext context) throws IOException, TenantApiException {
+    public EmailContent generateEmailForPaymentRefund(final AccountData account, final PaymentTransaction paymentTransaction, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
         return getEmailContent(TemplateType.PAYMENT_REFUND, account, null, null, paymentTransaction, context);
     }
 
-    public EmailContent generateEmailForSubscriptionCancellationRequested(final AccountData account, final Subscription subscription, final TenantContext context) throws IOException, TenantApiException {
+    public EmailContent generateEmailForSubscriptionCancellationRequested(final AccountData account, final Subscription subscription, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
         return getEmailContent(TemplateType.SUBSCRIPTION_CANCELLATION_REQUESTED, account, subscription, null, null, context);
     }
 
-    public EmailContent generateEmailForSubscriptionCancellationEffective(final AccountData account, final Subscription subscription, final TenantContext context) throws IOException, TenantApiException {
+    public EmailContent generateEmailForSubscriptionCancellationEffective(final AccountData account, final Subscription subscription, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
         return getEmailContent(TemplateType.SUBSCRIPTION_CANCELLATION_EFFECTIVE, account, subscription, null, null, context);
     }
 
-    private EmailContent getEmailContent(final TemplateType templateType, final AccountData account, @Nullable Subscription subscription, @Nullable final Invoice invoice, @Nullable final PaymentTransaction paymentTransaction, final TenantContext context) throws IOException, TenantApiException {
+    public EmailContent generateEmailForInvoiceCreation(final AccountData account, final Invoice invoice, final TenantContext context)throws IOException, TenantApiException, EmailNotificationException {
+        return getEmailContent(TemplateType.INVOICE_CREATION, account, null, invoice, null, context);
+    }
+
+    private EmailContent getEmailContent(final TemplateType templateType, final AccountData account, @Nullable Subscription subscription, @Nullable final Invoice invoice, @Nullable final PaymentTransaction paymentTransaction, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
 
         final String accountLocale = Strings.emptyToNull(account.getLocale());
         final Locale locale = accountLocale == null ? Locale.getDefault() : LocaleUtils.toLocale(accountLocale);
@@ -111,14 +122,22 @@ public class TemplateRenderer {
         }
 
         final String templateText = getTemplateText(locale, templateType, context);
+        if (templateText == null){
+            throw new EmailNotificationException(TEMPLATE_INVALID, accountLocale);
+        }
+
         final String body = templateEngine.executeTemplateText(templateText, data);
         final String subject = new StringBuffer((String) text.get("merchantName")).append(": ").append(text.get(templateType.getSubjectKeyName())).toString();
         return new EmailContent(subject, body);
     }
 
-    private Map<String, String> getTranslationMap(final String accountLocale, final ResourceBundleFactory.ResourceBundleType bundleType, final TenantContext context) throws TenantApiException {
+    private Map<String, String> getTranslationMap(final String accountLocale, final ResourceBundleFactory.ResourceBundleType bundleType, final TenantContext context) throws TenantApiException, EmailNotificationException {
         final ResourceBundle translationBundle = accountLocale != null ?
                 bundleFactory.createBundle(LocaleUtils.toLocale(accountLocale), bundleType, context) : null;
+
+        if (translationBundle == null){
+            throw new EmailNotificationException(TRANSLATION_INVALID, accountLocale);
+        }
 
         final Map<String, String> text = new HashMap<String, String>();
         Enumeration<String> keys = translationBundle.getKeys();
@@ -130,7 +149,7 @@ public class TemplateRenderer {
     }
 
 
-    private String getTemplateText(final Locale locale, final TemplateType templateType, final TenantContext context) throws IOException, TenantApiException {
+    private String getTemplateText(final Locale locale, final TemplateType templateType, final TenantContext context) throws TenantApiException {
 
         final String defaultTemplateName = DEFAULT_TEMPLATE_PATH_PREFIX + templateType.getDefaultTemplateName();
         if (context.getTenantId() == null) {
@@ -148,9 +167,28 @@ public class TemplateRenderer {
 
     }
 
-    private String getDefaultTemplate(final String templateName) throws IOException {
-        final InputStream templateStream = this.getClass().getClassLoader().getResource(templateName).openStream();
-        return IOUtils.toString(templateStream);
+    private String getDefaultTemplate(final String templateName) {
+        try{
+            final URL url = this.getClass().getClassLoader().getResource(templateName);
+
+            if (url == null){
+                return null;
+            }
+
+            final InputStream templateStream = url.openStream();
+
+            if (templateStream == null){
+                return null;
+            }
+
+            return IOUtils.toString(templateStream);
+        } catch (IllegalArgumentException iae) {
+            return null;
+        } catch (MissingResourceException mrex) {
+            return null;
+        } catch (IOException e) {
+            return null;
+        }
     }
 
 }

@@ -12,10 +12,16 @@ Kill Bill compatibility
 | 0.3.y          | 0.18.z            |
 | 0.4.y          | 0.20.z            |
 
+Requirements
+------------
+
+The plugin needs a database. The latest version of the schema can be found [here](https://github.com/killbill/killbill-email-notifications-plugin/tree/master/src/main/resources/org/killbill/billing/plugin/notification/ddl.sql).
+
 ## Overview
 
 The plugin will listen to specific system bus events and notify customers through emails. The following events are currently processed and emails are sent to all the emails associated with the account:
 
+* Invoice Creation: the customer will receive an email informing that a new invoice is available.
 * Upcoming invoices: the customer will receive an email about upcoming invoices (the time at which to send the email is configured through the Kill Bill system property `org.killbill.invoice.dryRunNotificationSchedule`)
 * Successful Payment: the customer will receive an email after each successful payment
 * Payment Failure: the customer will receive an email after each failed payment
@@ -23,14 +29,81 @@ The plugin will listen to specific system bus events and notify customers throug
 * Subscription Cancellation: the customer will receive an email at the time a subscription was requested to be canceled
 * Subscription Cancellation: the customer will receive an email at the effective date of the subscription cancellation
 
+Notice that in order to be able to be notified via email the account must be configured to permit such event(s). 
+
+### Configuring SMTP properties
+SMTP properties for the email notification plugin should be configured using the following call:
+
+```
+curl -v \
+-X POST \
+-u admin:password \
+-H 'X-Killbill-ApiKey: bob' \
+-H 'X-Killbill-ApiSecret: lazar' \
+-H 'X-Killbill-CreatedBy: admin' \
+-H 'Content-Type: text/plain' \
+-d 'org.killbill.billing.plugin.email-notifications.defaultEvents=INVOICE_PAYMENT_SUCCESS,SUBSCRIPTION_CANCEL
+org.killbill.billing.plugin.email-notifications.smtp.host=127.0.0.1
+org.killbill.billing.plugin.email-notifications.smtp.port=25
+org.killbill.billing.plugin.email-notifications.smtp.useAuthentication=true
+org.killbill.billing.plugin.email-notifications.smtp.userName=uuuuuu
+org.killbill.billing.plugin.email-notifications.smtp.password=zzzzzz
+org.killbill.billing.plugin.email-notifications.smtp.useSSL=false
+org.killbill.billing.plugin.email-notifications.smtp.defaultSender=xxx@yyy.com' \
+http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications
+```
+
+### Configuring permitted events
+
+There are two ways to configure the permitted event(s):
+
+* Can be specified on a per tenant basis
+* Can be specified per account.
+
+#### Per tenant
+
+```
+curl -v \
+-X POST \
+-u admin:password \
+-H 'X-Killbill-ApiKey: bob' \
+-H 'X-Killbill-ApiSecret: lazar' \
+-H 'X-Killbill-CreatedBy: admin' \
+-H 'Content-Type: text/plain' \
+-d 'org.killbill.billing.plugin.email-notifications.defaultEvents=INVOICE_PAYMENT_SUCCESS,SUBSCRIPTION_CANCEL
+org.killbill.billing.plugin.email-notifications.smtp.host=127.0.0.1
+org.killbill.billing.plugin.email-notifications.smtp.port=25
+org.killbill.billing.plugin.email-notifications.smtp.useAuthentication=true
+org.killbill.billing.plugin.email-notifications.smtp.userName=uuuuuu
+org.killbill.billing.plugin.email-notifications.smtp.password=zzzzzz
+org.killbill.billing.plugin.email-notifications.smtp.useSSL=false
+org.killbill.billing.plugin.email-notifications.smtp.defaultSender=xxx@yyy.com' \
+http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications
+```
+
+#### Per account
+
+```
+curl -v \
+     -X POST \
+     -u admin:password \
+     -H 'X-Killbill-ApiKey: bob' \
+     -H 'X-Killbill-ApiSecret: lazar' \
+     -H 'X-Killbill-CreatedBy: admin' \
+     -H 'Content-Type: application/json' \
+     -d '["INVOICE_NOTIFICATION","INVOICE_CREATION","INVOICE_PAYMENT_SUCCESS","INVOICE_PAYMENT_FAILED","SUBSCRIPTION_CANCEL"]' \
+     http://127.0.0.1:8080/plugins/killbill-email-notifications/v1/accounts/{accountId}
+```
+
 ## Multi-tenancy Configuration
 
 ### Supported Keys And Resources
 
 The plugin can be ran on a set of Kill Bill multi-tenant instances. The various templates and translation files can be uploaded on a per tenant basis using the following keys (for instance with a Locale `en_US`):
 
-Note that the approcah taken here has been to create on template per locale and per type (as opposed to one template per type with an additional set of translation string bundles for each locale):
+Note that the approach taken here has been to create on template per locale and per type (as opposed to one template per type with an additional set of translation string bundles for each locale):
 
+* Template for invoice creation: `killbill-email-notifications:INVOICE_CREATION_en_US` 
 * Template for upcoming invoices: `killbill-email-notifications:UPCOMING_INVOICE_en_US` 
 * Template for failed payments: `killbill-email-notifications:FAILED_PAYMENT_en_US`
 * Template for subscription cancellation (requested date): `killbill-email-notifications:SUBSCRIPTION_CANCELLATION_REQUESTED_en_US`
@@ -48,7 +121,7 @@ Currently, there is no caching for these templates within Kill Bill, but the plu
 
 ### CURL Examples
 
-For instnace to upload a template for the next upcoming invoice and for a locale `en_US`:
+For instance to upload a template for the next upcoming invoice and for a locale `en_US`:
 
 1. Create the template `/tmp/UpcomingInvoice.mustache`:
 
