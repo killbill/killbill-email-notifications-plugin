@@ -36,8 +36,10 @@ import org.killbill.billing.catalog.api.PlanSpecifier;
 import org.killbill.billing.catalog.api.PriceList;
 import org.killbill.billing.catalog.api.Product;
 import org.killbill.billing.catalog.api.ProductCategory;
+import org.killbill.billing.catalog.api.StaticCatalog;
 import org.killbill.billing.entitlement.api.Entitlement;
 import org.killbill.billing.entitlement.api.EntitlementApiException;
+import org.killbill.billing.entitlement.api.EntitlementSpecifier;
 import org.killbill.billing.entitlement.api.Subscription;
 import org.killbill.billing.entitlement.api.SubscriptionEvent;
 import org.killbill.billing.invoice.api.Invoice;
@@ -356,6 +358,11 @@ public class TestTemplateRenderer {
     private Subscription createFutureCancelledSubscription(final LocalDate chargedThroughDate, final String planName) {
         final Plan lastActivePlan = new Plan() {
             @Override
+            public StaticCatalog getCatalog() {
+                return null;
+            }
+
+            @Override
             public BillingMode getRecurringBillingMode() {
                 return null;
             }
@@ -542,7 +549,7 @@ public class TestTemplateRenderer {
             }
 
             @Override
-            public Entitlement changePlan(final PlanPhaseSpecifier planPhaseSpecifier, final List<PlanPhasePriceOverride> list, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
+            public Entitlement changePlan(final EntitlementSpecifier entitlementSpecifier, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
                 return null;
             }
 
@@ -551,12 +558,12 @@ public class TestTemplateRenderer {
             }
 
             @Override
-            public Entitlement changePlanWithDate(final PlanPhaseSpecifier planPhaseSpecifier, final List<PlanPhasePriceOverride> list, final LocalDate localDate, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
+            public Entitlement changePlanWithDate(final EntitlementSpecifier entitlementSpecifier, final LocalDate localDate, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
                 return null;
             }
 
             @Override
-            public Entitlement changePlanOverrideBillingPolicy(final PlanPhaseSpecifier planPhaseSpecifier, final List<PlanPhasePriceOverride> list, final LocalDate localDate, final BillingActionPolicy billingActionPolicy, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
+            public Entitlement changePlanOverrideBillingPolicy(final EntitlementSpecifier entitlementSpecifier, final LocalDate localDate, final BillingActionPolicy billingActionPolicy, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
                 return null;
             }
 
@@ -637,6 +644,16 @@ public class TestTemplateRenderer {
 
             @Override
             public UUID getSubscriptionId() {
+                return null;
+            }
+
+            @Override
+            public String getProductName() {
+                return null;
+            }
+
+            @Override
+            public String getPrettyProductName() {
                 return null;
             }
 
@@ -957,11 +974,6 @@ public class TestTemplateRenderer {
             @Override
             public Boolean isMigrated() {
                 return false;
-            }
-
-            @Override
-            public Boolean isNotifiedForInvoices() {
-                return true;
             }
 
             @Override
