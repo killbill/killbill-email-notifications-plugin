@@ -175,6 +175,16 @@ public class DefaultInvoiceFormatter implements InvoiceFormatter {
     }
 
     @Override
+    public UUID getParentAccountId() {
+        return invoice.getParentAccountId();
+    }
+
+    @Override
+    public UUID getParentInvoiceId() {
+        return invoice.getParentInvoiceId();
+    }
+
+    @Override
     public LocalDate getInvoiceDate() {
         return invoice.getInvoiceDate();
     }

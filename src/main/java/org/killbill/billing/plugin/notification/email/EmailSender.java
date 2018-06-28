@@ -117,7 +117,6 @@ public class EmailSender {
     }
 
     public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body, final SmtpProperties smtp) throws IOException, EmailException, EmailNotificationException {
-
         logService.log(LogService.LOG_INFO, String.format("Sending email to = %s, cc= %s, subject = %s body = [%s]",
                 to,
                 JOINER_ON_COMMA.join(cc),

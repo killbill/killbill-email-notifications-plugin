@@ -126,8 +126,23 @@ public class DefaultInvoiceItemFormatter implements InvoiceItemFormatter {
     }
 
     @Override
+    public String getProductName() {
+        return null;
+    }
+
+    @Override
+    public String getPrettyProductName() {
+        return null;
+    }
+
+    @Override
     public String getPlanName() {
         return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getPlanName())), Strings.nullToEmpty(item.getPlanName()));
+    }
+
+    @Override
+    public String getPrettyPlanName() {
+        return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getPhaseName())), Strings.nullToEmpty( item.getPrettyPlanName()));
     }
 
     @Override
@@ -136,8 +151,18 @@ public class DefaultInvoiceItemFormatter implements InvoiceItemFormatter {
     }
 
     @Override
+    public String getPrettyPhaseName() {
+        return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getPhaseName())), Strings.nullToEmpty( item.getPrettyPhaseName()));
+    }
+
+    @Override
     public String getUsageName() {
         return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getUsageName())), Strings.nullToEmpty(item.getUsageName()));
+    }
+
+    @Override
+    public String getPrettyUsageName() {
+        return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getPhaseName())), Strings.nullToEmpty( item.getPrettyUsageName()));
     }
 
     @Override
@@ -171,6 +196,16 @@ public class DefaultInvoiceItemFormatter implements InvoiceItemFormatter {
     @Override
     public UUID getLinkedItemId() {
         return null;
+    }
+
+    @Override
+    public Integer getQuantity() {
+        return item.getQuantity();
+    }
+
+    @Override
+    public String getItemDetails() {
+        return item.getItemDetails();
     }
 
     @Override

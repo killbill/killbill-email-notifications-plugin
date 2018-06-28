@@ -23,6 +23,7 @@ import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.killbill.billing.account.api.AccountData;
 import org.killbill.billing.catalog.api.BillingActionPolicy;
+import org.killbill.billing.catalog.api.BillingMode;
 import org.killbill.billing.catalog.api.BillingPeriod;
 import org.killbill.billing.catalog.api.CatalogApiException;
 import org.killbill.billing.catalog.api.Currency;
@@ -30,12 +31,15 @@ import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.catalog.api.Plan;
 import org.killbill.billing.catalog.api.PlanPhase;
 import org.killbill.billing.catalog.api.PlanPhasePriceOverride;
+import org.killbill.billing.catalog.api.PlanPhaseSpecifier;
 import org.killbill.billing.catalog.api.PlanSpecifier;
 import org.killbill.billing.catalog.api.PriceList;
 import org.killbill.billing.catalog.api.Product;
 import org.killbill.billing.catalog.api.ProductCategory;
+import org.killbill.billing.catalog.api.StaticCatalog;
 import org.killbill.billing.entitlement.api.Entitlement;
 import org.killbill.billing.entitlement.api.EntitlementApiException;
+import org.killbill.billing.entitlement.api.EntitlementSpecifier;
 import org.killbill.billing.entitlement.api.Subscription;
 import org.killbill.billing.entitlement.api.SubscriptionEvent;
 import org.killbill.billing.invoice.api.Invoice;
@@ -340,6 +344,11 @@ public class TestTemplateRenderer {
     private TenantContext createTenantContext() {
         return new TenantContext() {
             @Override
+            public UUID getAccountId() {
+                return null;
+            }
+
+            @Override
             public UUID getTenantId() {
                 return null;
             }
@@ -348,6 +357,16 @@ public class TestTemplateRenderer {
 
     private Subscription createFutureCancelledSubscription(final LocalDate chargedThroughDate, final String planName) {
         final Plan lastActivePlan = new Plan() {
+            @Override
+            public StaticCatalog getCatalog() {
+                return null;
+            }
+
+            @Override
+            public BillingMode getRecurringBillingMode() {
+                return null;
+            }
+
             @Override
             public PlanPhase[] getInitialPhases() {
                 return new PlanPhase[0];
@@ -366,6 +385,11 @@ public class TestTemplateRenderer {
             @Override
             public String getName() {
                 return planName;
+            }
+
+            @Override
+            public String getPrettyName() {
+                return null;
             }
 
             @Override
@@ -525,17 +549,21 @@ public class TestTemplateRenderer {
             }
 
             @Override
-            public Entitlement changePlan(PlanSpecifier spec, List<PlanPhasePriceOverride> overrides, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
+            public Entitlement changePlan(final EntitlementSpecifier entitlementSpecifier, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
                 return null;
             }
 
             @Override
-            public Entitlement changePlanWithDate(PlanSpecifier spec, List<PlanPhasePriceOverride> overrides, LocalDate effectiveDate, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
+            public void undoChangePlan(final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
+            }
+
+            @Override
+            public Entitlement changePlanWithDate(final EntitlementSpecifier entitlementSpecifier, final LocalDate localDate, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
                 return null;
             }
 
             @Override
-            public Entitlement changePlanOverrideBillingPolicy(PlanSpecifier spec, List<PlanPhasePriceOverride> overrides, LocalDate effectiveDate, BillingActionPolicy billingPolicy, Iterable<PluginProperty> properties, CallContext context) throws EntitlementApiException {
+            public Entitlement changePlanOverrideBillingPolicy(final EntitlementSpecifier entitlementSpecifier, final LocalDate localDate, final BillingActionPolicy billingActionPolicy, final Iterable<PluginProperty> iterable, final CallContext callContext) throws EntitlementApiException {
                 return null;
             }
 
@@ -620,8 +648,23 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public String getProductName() {
+                return null;
+            }
+
+            @Override
+            public String getPrettyProductName() {
+                return null;
+            }
+
+            @Override
             public String getPlanName() {
                 return planName;
+            }
+
+            @Override
+            public String getPrettyPlanName() {
+                return null;
             }
 
             @Override
@@ -630,7 +673,17 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public String getPrettyPhaseName() {
+                return null;
+            }
+
+            @Override
             public String getUsageName() {
+                return null;
+            }
+
+            @Override
+            public String getPrettyUsageName() {
                 return null;
             }
 
@@ -641,6 +694,16 @@ public class TestTemplateRenderer {
 
             @Override
             public UUID getLinkedItemId() {
+                return null;
+            }
+
+            @Override
+            public Integer getQuantity() {
+                return null;
+            }
+
+            @Override
+            public String getItemDetails() {
                 return null;
             }
 
@@ -785,6 +848,16 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public UUID getParentAccountId() {
+                return null;
+            }
+
+            @Override
+            public UUID getParentInvoiceId() {
+                return null;
+            }
+
+            @Override
             public UUID getId() {
                 return null;
             }
@@ -844,6 +917,11 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public DateTime getReferenceTime() {
+                return null;
+            }
+
+            @Override
             public DateTimeZone getTimeZone() {
                 return DateTimeZone.UTC;
             }
@@ -896,11 +974,6 @@ public class TestTemplateRenderer {
             @Override
             public Boolean isMigrated() {
                 return false;
-            }
-
-            @Override
-            public Boolean isNotifiedForInvoices() {
-                return true;
             }
 
             @Override
