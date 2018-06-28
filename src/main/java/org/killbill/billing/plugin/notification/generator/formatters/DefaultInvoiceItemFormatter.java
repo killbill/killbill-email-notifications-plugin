@@ -126,6 +126,16 @@ public class DefaultInvoiceItemFormatter implements InvoiceItemFormatter {
     }
 
     @Override
+    public String getProductName() {
+        return null;
+    }
+
+    @Override
+    public String getPrettyProductName() {
+        return null;
+    }
+
+    @Override
     public String getPlanName() {
         return MoreObjects.firstNonNull(Strings.emptyToNull(translator.get(item.getPlanName())), Strings.nullToEmpty(item.getPlanName()));
     }
