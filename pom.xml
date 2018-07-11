@@ -22,12 +22,12 @@
     <parent>
         <artifactId>killbill-oss-parent</artifactId>
         <groupId>org.kill-bill.billing</groupId>
-        <version>0.140.55</version>
+        <version>0.141.97</version>
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>killbill-email-notifications-plugin</artifactId>
     <name>Kill Bill OSGI Email Notifications Plugin</name>
-    <version>0.3.2-SNAPSHOT</version>
+    <version>0.4.1-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <description>Kill Bill Email Notifications Plugin</description>
     <url>http://github.com/killbill/killbill-email-notifications-plugin</url>
@@ -43,7 +43,7 @@
     <properties>
         <!-- More recent versions than the core (JDK1.8+) -->
         <guava.version>21.0</guava.version>
-        <jackson.version>2.9.2</jackson.version>
+        <jackson.version>2.9.5</jackson.version>
     </properties>
     <dependencies>
         <dependency>
@@ -141,6 +141,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.18</version>
+        </dependency>
+        <dependency>
             <groupId>org.jooq</groupId>
             <artifactId>jooq</artifactId>
             <version>3.10.1</version>
@@ -225,7 +230,7 @@
         <dependency>
             <groupId>com.typesafe</groupId>
             <artifactId>config</artifactId>
-            <version>1.3.1</version>
+            <version>1.3.2</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -241,7 +246,6 @@
             <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
-
     </dependencies>
 
     <build>

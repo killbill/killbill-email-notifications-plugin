@@ -30,9 +30,8 @@ import org.killbill.billing.account.api.Account;
 import org.killbill.billing.account.api.AccountApiException;
 import org.killbill.billing.account.api.AccountEmail;
 import org.killbill.billing.catalog.api.BillingActionPolicy;
-import org.killbill.billing.catalog.api.PlanPhasePriceOverride;
-import org.killbill.billing.catalog.api.PlanPhaseSpecifier;
 import org.killbill.billing.entitlement.api.Entitlement;
+import org.killbill.billing.entitlement.api.EntitlementSpecifier;
 import org.killbill.billing.entitlement.api.Subscription;
 import org.killbill.billing.entitlement.api.SubscriptionApiException;
 import org.killbill.billing.entitlement.api.SubscriptionEventType;
@@ -43,6 +42,7 @@ import org.killbill.billing.invoice.api.InvoiceApiException;
 import org.killbill.billing.invoice.api.InvoicePayment;
 import org.killbill.billing.notification.plugin.api.ExtBusEvent;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
+import org.killbill.billing.notification.plugin.api.NotificationPluginApiRetryException;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillClock;
@@ -57,7 +57,6 @@ import org.killbill.billing.payment.api.TransactionStatus;
 import org.killbill.billing.payment.api.TransactionType;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.email.EmailSender;
-import org.killbill.billing.plugin.notification.email.SmtpProperties;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.ResourceBundleFactory;
 import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
@@ -72,7 +71,6 @@ import org.skife.config.TimeSpan;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.UUID;
 
 public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OSGIKillbillEventHandler {
@@ -128,14 +126,14 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
 
         try {
-            final Account account = osgiKillbillAPI.getAccountUserApi().getAccountById(killbillEvent.getAccountId(), new EmailNotificationContext(killbillEvent.getTenantId()));
+            final Account account = osgiKillbillAPI.getAccountUserApi().getAccountById(killbillEvent.getAccountId(), new EmailNotificationContext(killbillEvent.getAccountId(), killbillEvent.getTenantId()));
             final String to = account.getEmail();
             if (to == null) {
                 logService.log(LogService.LOG_INFO, "Account " + account.getId() + " does not have an email address configured, skip...");
                 return;
             }
 
-            final EmailNotificationContext context = new EmailNotificationContext(killbillEvent.getTenantId());
+            final EmailNotificationContext context = new EmailNotificationContext(killbillEvent.getAccountId(), killbillEvent.getTenantId());
             switch (killbillEvent.getEventType()) {
                 case INVOICE_NOTIFICATION:
                     sendEmailForUpComingInvoice(account, killbillEvent, context);
@@ -172,6 +170,8 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (EmailException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
+            // Attempt a retry
+            throw new NotificationPluginApiRetryException(e);
         } catch (IOException e) {
             logService.log(LogService.LOG_WARNING, String.format("Fail to send email for account %s", killbillEvent.getAccountId()), e);
         } catch (TenantApiException e) {
@@ -222,8 +222,8 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         final DateTime now = clock.getClock().getUTCNow();
         final DateTime targetDateTime = now.plus(span.getMillis());
 
-        final PluginCallContext callContext = new PluginCallContext(EmailNotificationActivator.PLUGIN_NAME, now, context.getTenantId());
-        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerInvoiceGeneration(account.getId(), new LocalDate(targetDateTime, account.getTimeZone()), NULL_DRY_RUN_ARGUMENTS, callContext);
+        final PluginCallContext callContext = new PluginCallContext(EmailNotificationActivator.PLUGIN_NAME, now, context.getAccountId(), context.getTenantId());
+        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerDryRunInvoiceGeneration(account.getId(), new LocalDate(targetDateTime, account.getTimeZone()), NULL_DRY_RUN_ARGUMENTS, callContext);
         if (invoice != null) {
             final EmailContent emailContent = templateRenderer.generateEmailForUpComingInvoice(account, invoice, context);
             sendEmail(account, emailContent, context);
@@ -309,10 +309,17 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
 
     private static final class EmailNotificationContext implements TenantContext {
 
+        private final UUID accountId;
         private final UUID tenantId;
 
-        private EmailNotificationContext(final UUID tenantId) {
+        private EmailNotificationContext(final UUID accountId, final UUID tenantId) {
+            this.accountId = accountId;
             this.tenantId = tenantId;
+        }
+
+        @Override
+        public UUID getAccountId() {
+            return accountId;
         }
 
         @Override
@@ -328,7 +335,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         }
 
         @Override
-        public PlanPhaseSpecifier getPlanPhaseSpecifier() {
+        public EntitlementSpecifier getEntitlementSpecifier() {
             return null;
         }
 
@@ -357,10 +364,6 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             return null;
         }
 
-        @Override
-        public List<PlanPhasePriceOverride> getPlanPhasePriceOverrides() {
-            return null;
-        }
     }
 
     private EmailNotificationConfiguration getConfiguration(final TenantContext context){
