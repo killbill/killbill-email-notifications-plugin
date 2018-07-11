@@ -59,9 +59,9 @@ public class ConfigurationDao extends PluginDao
                            public List<EmailNotificationsConfiguration> withConnection(final Connection conn) throws SQLException {
                                return DSL.using(conn, dialect, settings)
                                          .selectFrom(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
-                                         .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
-                                         .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).in(kbAccountId))
-                                         .orderBy(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + RECORD_ID).asc())
+                                         .where(DSL.field(KB_TENANT_ID).equal(kbTenantId.toString()))
+                                         .and(DSL.field(KB_ACCOUNT_ID).in(kbAccountId))
+                                         .orderBy(DSL.field(RECORD_ID).asc())
                                          .fetch().into(EmailNotificationsConfiguration.class);
                            }
                        });
@@ -74,9 +74,9 @@ public class ConfigurationDao extends PluginDao
                            public List<EmailNotificationsConfiguration> withConnection(final Connection conn) throws SQLException {
                                return DSL.using(conn, dialect, settings)
                                          .selectFrom(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
-                                         .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
-                                         .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString()))
-                                         .orderBy(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + RECORD_ID).asc())
+                                         .where(DSL.field(KB_TENANT_ID).equal(kbTenantId.toString()))
+                                         .and(DSL.field(KB_ACCOUNT_ID).equal(kbAccountId.toString()))
+                                         .orderBy(DSL.field(RECORD_ID).asc())
                                          .fetch().into(EmailNotificationsConfiguration.class);
                            }
                        });
@@ -89,10 +89,10 @@ public class ConfigurationDao extends PluginDao
                            public List<EmailNotificationsConfiguration> withConnection(final Connection conn) throws SQLException {
                                return DSL.using(conn, dialect, settings)
                                          .selectFrom(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
-                                         .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
-                                         .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString()))
-                                         .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + EVENT_TYPE).equal(eventType.toString()))
-                                         .orderBy(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + RECORD_ID).asc())
+                                         .where(DSL.field(KB_TENANT_ID).equal(kbTenantId.toString()))
+                                         .and(DSL.field(KB_ACCOUNT_ID).equal(kbAccountId.toString()))
+                                         .and(DSL.field(EVENT_TYPE).equal(eventType.toString()))
+                                         .orderBy(DSL.field(RECORD_ID).asc())
                                          .fetch().into(EmailNotificationsConfiguration.class);
                            }
                        });
@@ -122,17 +122,17 @@ public class ConfigurationDao extends PluginDao
                     DSL.using(conn, dialect, settings).transaction(context -> {
                                                     DSL.using(context)
                                                        .delete(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
-                                                       .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString()))
-                                                       .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
+                                                       .where(DSL.field(KB_ACCOUNT_ID).equal(kbAccountId.toString()))
+                                                       .and(DSL.field(KB_TENANT_ID).equal(kbTenantId.toString()))
                                                        .execute();
 
                                                     for (ExtBusEventType eventType : eventTypes) {
                                                         DSL.using(context)
                                                            .insertInto(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION,
-                                                                       DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID),
-                                                                       DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + EVENT_TYPE),
-                                                                       DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + CREATED_AT),
-                                                                       DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID))
+                                                                       DSL.field(KB_ACCOUNT_ID),
+                                                                       DSL.field(EVENT_TYPE),
+                                                                       DSL.field(CREATED_AT),
+                                                                       DSL.field(KB_TENANT_ID))
                                                            .values(kbAccountId.toString(),
                                                                    eventType.toString(),
                                                                    toTimestamp(utcNow),
@@ -154,8 +154,8 @@ public class ConfigurationDao extends PluginDao
 
                         DSL.using(conn, dialect, settings)
                            .delete(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
-                           .where(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_ACCOUNT_ID).equal(kbAccountId.toString()))
-                           .and(DSL.field(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION.getName() + "." + KB_TENANT_ID).equal(kbTenantId.toString()))
+                           .where(DSL.field(KB_ACCOUNT_ID).equal(kbAccountId.toString()))
+                           .and(DSL.field(KB_TENANT_ID).equal(kbTenantId.toString()))
                            .execute();
 
                         return null;
