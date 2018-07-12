@@ -47,7 +47,7 @@ public class TestEmailNotificationServlet extends TestWithEmbeddedDBBase {
     protected OSGIKillbillDataSource dataSource;
     protected OSGIKillbillClock clock;
 
-    @BeforeMethod(groups = "mysql")
+    @BeforeMethod(groups = "slow")
     public void setup() throws IOException {
 
         dataSource = buildOSGIKillbillDataSource(embeddedDB.getDataSource());
@@ -55,7 +55,7 @@ public class TestEmailNotificationServlet extends TestWithEmbeddedDBBase {
 
     }
 
-    @Test(groups = "mysql")
+    @Test(groups = "slow")
     public void updateConfiguration() throws IOException {
         final UUID kbTenantId = UUID.randomUUID();
         final UUID kbAccountId = UUID.randomUUID();
@@ -84,7 +84,7 @@ public class TestEmailNotificationServlet extends TestWithEmbeddedDBBase {
 
     }
 
-    @Test(groups = "mysql")
+    @Test(groups = "slow")
     public void updateMulipleConfiguration() throws IOException
     {
         Result result = null;
