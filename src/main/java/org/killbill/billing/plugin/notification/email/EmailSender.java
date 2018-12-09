@@ -123,6 +123,7 @@ public class EmailSender {
                 subject,
                 body));
         final SimpleEmail email = new SimpleEmail();
+        email.setCharset("utf-8");
         email.setMsg(body);
         sendEmail(to, cc, subject, email, precheckSmtp(smtp));
     }

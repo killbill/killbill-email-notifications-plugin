@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.List;
 import java.util.Locale;
@@ -80,7 +81,7 @@ public class ResourceBundleFactory {
         final String bundle = getTenantBundleForType(locale, type, tenantContext);
         if (bundle != null) {
             try {
-                return new PropertyResourceBundle(new ByteArrayInputStream(bundle.getBytes(Charsets.UTF_8)));
+                return new PropertyResourceBundle(new InputStreamReader(new ByteArrayInputStream(bundle.getBytes(Charsets.UTF_8)), "UTF-8"));
             } catch (IOException e) {
                 logService.log(LogService.LOG_WARNING, String.format("Failed to de-serialize the property bundle for tenant %s and locale %s", tenantContext.getTenantId(), locale));
                 // Fall through...
