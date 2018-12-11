@@ -127,7 +127,7 @@ public class TemplateRenderer {
         }
 
         final String body = templateEngine.executeTemplateText(templateText, data);
-        final String subject = new StringBuffer((String) text.get("merchantName")).append(": ").append(text.get(templateType.getSubjectKeyName())).toString();
+        final String subject = text.get(templateType.getSubjectKeyName());
         return new EmailContent(subject, body);
     }
 

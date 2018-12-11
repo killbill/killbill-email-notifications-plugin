@@ -144,7 +144,7 @@ public class TestTemplateRenderer {
                 "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
 
         //System.err.println(email.getBody());
-        Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Payment Confirmation");
+        Assert.assertEquals(email.getSubject(), "Payment Confirmation");
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
@@ -183,7 +183,7 @@ public class TestTemplateRenderer {
                 "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
 
         //System.err.println(email.getBody());
-        Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Payment Confirmation");
+        Assert.assertEquals(email.getSubject(), "Payment Confirmation");
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
@@ -228,7 +228,7 @@ public class TestTemplateRenderer {
                 "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
 
         //System.err.println(email.getBody());
-        Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Failed Payment");
+        Assert.assertEquals(email.getSubject(), "Failed Payment");
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
@@ -249,7 +249,7 @@ public class TestTemplateRenderer {
                 "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
 
         // System.err.println(email.getBody());
-        Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Refund Receipt");
+        Assert.assertEquals(email.getSubject(), "Refund Receipt");
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
@@ -278,7 +278,7 @@ public class TestTemplateRenderer {
                 "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
 
         //System.err.println(email.getBody());
-        Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Subscription Canceled");
+        Assert.assertEquals(email.getSubject(), "Subscription Canceled");
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
@@ -299,7 +299,7 @@ public class TestTemplateRenderer {
                 "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
 
         //System.err.println(email.getBody());
-        Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: Subscription Ended");
+        Assert.assertEquals(email.getSubject(), "Subscription Ended");
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
@@ -335,7 +335,7 @@ public class TestTemplateRenderer {
                 "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
 
         //System.err.println(email.getBody());
-        Assert.assertEquals(email.getSubject(), "MERCHANT_NAME: You Have a New Invoice");
+        Assert.assertEquals(email.getSubject(), "You Have a New Invoice");
 
         Assert.assertEquals(email.getBody(), expectedBody);
     }
