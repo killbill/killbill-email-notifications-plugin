@@ -20,7 +20,7 @@ The plugin needs a database. The latest version of the schema can be found [here
 
 ## Overview
 
-The plugin will listen to specific system bus events and notify customers through emails. The following events are currently processed and emails are sent to all the emails associated with the account:
+The plugin will listen to specific system bus events and notify customers through emails. The following events are currently processed and emails are sent to all the email addresses associated with the account:
 
 * Invoice Creation: the customer will receive an email informing that a new invoice is available.
 * Upcoming invoices: the customer will receive an email about upcoming invoices (the time at which to send the email is configured through the Kill Bill system property `org.killbill.invoice.dryRunNotificationSchedule`)
@@ -30,7 +30,7 @@ The plugin will listen to specific system bus events and notify customers throug
 * Subscription Cancellation: the customer will receive an email at the time a subscription was requested to be canceled
 * Subscription Cancellation: the customer will receive an email at the effective date of the subscription cancellation
 
-Notice that in order to be able to be notified via email the account must be configured to permit such event(s). 
+Note that in order to be able to be notified via email the account must be configured to permit such event(s). 
 
 ### Configuring SMTP properties
 SMTP properties for the email notification plugin should be configured using the following call:
@@ -102,7 +102,7 @@ curl -v \
 
 The plugin can be ran on a set of Kill Bill multi-tenant instances. The various templates and translation files can be uploaded on a per tenant basis using the following keys (for instance with a Locale `en_US`):
 
-Note that the approach taken here has been to create on template per locale and per type (as opposed to one template per type with an additional set of translation string bundles for each locale):
+Note that the approach taken here has been to create one template per locale and per type (as opposed to one template per type with an additional set of translation string bundles for each locale):
 
 * Template for invoice creation: `killbill-email-notifications:INVOICE_CREATION_en_US` 
 * Template for upcoming invoices: `killbill-email-notifications:UPCOMING_INVOICE_en_US` 
