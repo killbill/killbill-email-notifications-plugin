@@ -30,7 +30,7 @@ The plugin will listen to specific system bus events and notify customers throug
 * Subscription Cancellation: the customer will receive an email at the time a subscription was requested to be canceled
 * Subscription Cancellation: the customer will receive an email at the effective date of the subscription cancellation
 
-Note that in order to be able to be notified via email the account must be configured to permit such event(s). 
+Note that in order to send an email the account must be configured to permit such event(s). 
 
 ### Configuring SMTP properties
 SMTP properties for the email notification plugin should be configured using the following call:
