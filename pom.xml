@@ -43,7 +43,7 @@
     <properties>
         <!-- More recent versions than the core (JDK1.8+) -->
         <guava.version>21.0</guava.version>
-        <jackson.version>2.9.5</jackson.version>
+        <jackson.version>2.10.1</jackson.version>
     </properties>
     <dependencies>
         <dependency>
