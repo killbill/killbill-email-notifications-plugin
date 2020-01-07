@@ -209,6 +209,11 @@ public class DefaultInvoiceItemFormatter implements InvoiceItemFormatter {
     }
 
     @Override
+    public DateTime getCatalogEffectiveDate() {
+        return item.getCatalogEffectiveDate();
+    }
+
+    @Override
     public boolean matches(final Object other) {
         throw new UnsupportedOperationException();
     }

@@ -378,7 +378,7 @@ public class TestTemplateRenderer {
             }
 
             @Override
-            public String getPriceListName() {
+            public PriceList getPriceList() {
                 return null;
             }
 
@@ -460,6 +460,11 @@ public class TestTemplateRenderer {
 
             @Override
             public UUID getBundleId() {
+                return null;
+            }
+
+            @Override
+            public String getBundleExternalKey() {
                 return null;
             }
 
@@ -708,6 +713,11 @@ public class TestTemplateRenderer {
             }
 
             @Override
+            public DateTime getCatalogEffectiveDate() {
+                return null;
+            }
+
+            @Override
             public boolean matches(Object other) {
                 return false;
             }
@@ -745,6 +755,16 @@ public class TestTemplateRenderer {
             @Override
             public List<InvoiceItem> getInvoiceItems() {
                 return items;
+            }
+
+            @Override
+            public List<String> getTrackingIds() {
+                return null;
+            }
+
+            @Override
+            public boolean addTrackingIds(final Collection<String> trackingIds) {
+                return false;
             }
 
             @Override

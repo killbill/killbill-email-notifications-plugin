@@ -76,6 +76,16 @@ public class DefaultInvoiceFormatter implements InvoiceFormatter {
     }
 
     @Override
+    public List<String> getTrackingIds() {
+        return invoice.getTrackingIds();
+    }
+
+    @Override
+    public boolean addTrackingIds(final Collection<String> trackingIds) {
+        return invoice.addTrackingIds(trackingIds);
+    }
+
+    @Override
     public boolean addInvoiceItem(final InvoiceItem item) {
         return invoice.addInvoiceItem(item);
     }
