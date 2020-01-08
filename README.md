@@ -88,7 +88,7 @@ curl -v \
 
 The plugin comes with a set of [default templates](src/main/resources/org/killbill/billing/plugin/notification/templates) but one will typically want to upload his own templates. We are relying on the [mustache engine](https://mustache.github.io/) for the templating mechanism.
 
-In addition to the templates, we all allow to upload some resources files to allow for string translations in different languages, e.g to have different trnslation for the catalog prodcut names, ...
+In addition to the templates, we all allow to upload some resources files to allow for string translations in different languages, e.g to have different translation for the catalog product names, ...
 
 ### Supported Keys And Resources
 
@@ -173,4 +173,4 @@ docker run -tid --name smtp_server -p 25:25  -e DISABLE_IPV6=true namshi/smtp
 4. [Add a default payment method](https://killbill.github.io/slate/#account-add-a-payment-method) and set it as default.
 5. [Create a external charge](https://killbill.github.io/slate/#invoice-create-external-charge-s) to trigger an invoice
 
-=> You should see an email sent for the invoice and succesuful payment
+=> You should see an email sent for the invoice and successful payment
