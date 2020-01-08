@@ -167,12 +167,9 @@ docker run -tid --name smtp_server -p 25:25  -e DISABLE_IPV6=true namshi/smtp
 
 ## Scenario
 
- company_name='company', address1='address1', city='Besançon', state_or_province='franche comté', postal_code='25000', country='France' where record_id = 716;
-Query OK, 1 row affected (0.
-
 1. [Create a tenant](https://killbill.github.io/slate/#tenant-create-a-tenant)
 2. Configure the tenant as specififed above
-3. [Create an account]((https://killbill.github.io/slate/#account-create-an-account)) and specifify at least the `locale` and `email`. Our default template will also require the following fields to be set on the `Account`:  `company_name`, `address1`, `city`, `state_or_province`, `postal_code`, `country`.
+3. [Create an account](https://killbill.github.io/slate/#account-create-an-account) and specifify at least the `locale` and `email`. Our default template will also require the following fields to be set on the `Account`:  `company_name`, `address1`, `city`, `state_or_province`, `postal_code`, `country`.
 4. [Add a default payment method](https://killbill.github.io/slate/#account-add-a-payment-method) and set it as default.
 5. [Create a external charge](https://killbill.github.io/slate/#invoice-create-external-charge-s) to trigger an invoice
 
