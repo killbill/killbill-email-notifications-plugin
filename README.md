@@ -61,6 +61,7 @@ org.killbill.billing.plugin.email-notifications.smtp.useAuthentication=true
 org.killbill.billing.plugin.email-notifications.smtp.userName=uuuuuu
 org.killbill.billing.plugin.email-notifications.smtp.password=zzzzzz
 org.killbill.billing.plugin.email-notifications.smtp.useSSL=false
+org.killbill.billing.plugin.email-notifications.smtp.sendHTMLEmail=true
 org.killbill.billing.plugin.email-notifications.smtp.defaultSender=xxx@yyy.com' \
      http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-email-notifications
 ```
