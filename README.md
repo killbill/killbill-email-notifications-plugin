@@ -105,6 +105,16 @@ Note that the approach taken here has been to create one template per locale and
 
 The last template is where you define all of the `text.` values referenced from your template (take a look at what our [default templates](src/main/resources/org/killbill/billing/plugin/notification/templates) require).
 
+This is also where the email subjects are defined by the following mandatory keys:
+
+* `upcomingInvoiceSubject`
+* `successfulPaymentSubject`
+* `failedPaymentSubject`
+* `paymentRefundSubject`
+* `subscriptionCancellationRequestedSubject`
+* `subscriptionCancellationEffectiveSubject`
+* `invoiceCreationSubject`
+
 The following Kill Bill endpoints can be used to upload the templates:
 
 * Upload a new per-tenant template for a specific locale: `POST /1.0/kb/tenants/userKeyValue/<KEY_NAME>`
