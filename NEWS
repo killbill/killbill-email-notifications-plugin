@@ -1,3 +1,10 @@
+0.6.1
+    Support for HTML emails
+    Fix NPE when handling external charges
+
+0.6.0
+    Initial release for Kill Bill 0.22.x
+
 0.5.1
     Make sure email's subject and body are UTF-8
     Do not hardcode merchant name in email subject
