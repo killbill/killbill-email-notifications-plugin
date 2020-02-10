@@ -37,6 +37,8 @@ public class EmailNotificationConfiguration {
     // Default events permitted
     private final Set<String> eventTypes;
 
+    private boolean sendHTMLEmail;
+
     public EmailNotificationConfiguration(){
         eventTypes = new HashSet<String>();
         smtp = null;
@@ -65,7 +67,7 @@ public class EmailNotificationConfiguration {
 
         this.smtp = new SmtpProperties(smtpServerName, smtpPort, parseBoolean(smtpAuth),
                                        smtpUserName, smtpPassword, parseBoolean(smtpUseSSL),defaultSender);
-        
+        this.sendHTMLEmail = parseBoolean(properties.getProperty(SMTP_PROPERTY_PREFIX + "sendHTMLEmail"));
     }
 
     public final Set<String> getEventTypes() {
@@ -75,6 +77,10 @@ public class EmailNotificationConfiguration {
 
     public SmtpProperties getSmtp() {
         return smtp;
+    }
+
+    public boolean sendHTMLEmail() {
+        return sendHTMLEmail;
     }
 
     private final boolean parseBoolean(String s){
