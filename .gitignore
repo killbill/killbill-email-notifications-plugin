@@ -117,3 +117,9 @@ buildNumber.properties
 *.db
 logs/
 .logs
+
+# Eclipse metadata
+.classpath
+.project
+.settings/
+
