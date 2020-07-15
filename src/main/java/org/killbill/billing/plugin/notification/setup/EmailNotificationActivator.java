@@ -82,7 +82,7 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         super.stop(context);
 
         if (invoiceFormatterTracker != null) {
-        	invoiceFormatterTracker.close();
+            invoiceFormatterTracker.close();
         }
     }
 
