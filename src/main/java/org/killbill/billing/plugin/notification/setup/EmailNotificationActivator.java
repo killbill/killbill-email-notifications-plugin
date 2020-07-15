@@ -22,6 +22,7 @@ import java.util.Hashtable;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 
+import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.osgi.api.OSGIPluginProperties;
 import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillEventDispatcher;
@@ -30,8 +31,10 @@ import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHand
 import org.killbill.billing.plugin.core.config.PluginEnvironmentConfig;
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
+import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.http.EmailNotificationServlet;
 import org.osgi.framework.BundleContext;
+import org.osgi.util.tracker.ServiceTracker;
 
 public class EmailNotificationActivator extends KillbillActivatorBase {
 
@@ -40,21 +43,26 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
 
     private OSGIKillbillEventDispatcher.OSGIKillbillEventHandler emailNotificationListener;
     private EmailNotificationConfigurationHandler emailNotificationConfigurationHandler;
+    private ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker;
 
     @Override
     public void start(final BundleContext context) throws Exception {
         super.start(context);
 
         final String region = PluginEnvironmentConfig.getRegion(configProperties.getProperties());
-
+        
         // Register an event listener for plugin configuration (optional)
         emailNotificationConfigurationHandler = new EmailNotificationConfigurationHandler(region, PLUGIN_NAME, killbillAPI, logService, dataSource);
         final EmailNotificationConfiguration globalConfiguration = emailNotificationConfigurationHandler.createConfigurable(configProperties.getProperties());
         emailNotificationConfigurationHandler.setDefaultConfigurable(globalConfiguration);
 
+        // create a service tracker for a custom InvoiceFormatter service
+        invoiceFormatterTracker = new ServiceTracker<>(context, InvoiceFormatterFactory.class, null);
+        invoiceFormatterTracker.open();
 
         // Register an event listener (optional)
-        emailNotificationListener = new EmailNotificationListener(clock, logService, killbillAPI, configProperties, dataSource, emailNotificationConfigurationHandler);
+        emailNotificationListener = new EmailNotificationListener(clock, logService, killbillAPI, configProperties, dataSource, emailNotificationConfigurationHandler,
+                invoiceFormatterTracker);
 
         // Register a servlet (optional)
         final PluginApp pluginApp = new PluginAppBuilder(PLUGIN_NAME,
@@ -73,7 +81,9 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
     public void stop(final BundleContext context) throws Exception {
         super.stop(context);
 
-        // Do additional work on shutdown (optional)
+        if (invoiceFormatterTracker != null) {
+        	invoiceFormatterTracker.close();
+        }
     }
 
 
