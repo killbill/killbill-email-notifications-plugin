@@ -40,6 +40,7 @@ import org.killbill.billing.invoice.api.DryRunType;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceApiException;
 import org.killbill.billing.invoice.api.InvoicePayment;
+import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.notification.plugin.api.ExtBusEvent;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import org.killbill.billing.notification.plugin.api.NotificationPluginApiRetryException;
@@ -62,10 +63,12 @@ import org.killbill.billing.plugin.notification.generator.ResourceBundleFactory;
 import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
 import org.killbill.billing.plugin.notification.dao.gen.tables.pojos.EmailNotificationsConfiguration;
+import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.dao.ConfigurationDao;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.osgi.service.log.LogService;
+import org.osgi.util.tracker.ServiceTracker;
 import org.skife.config.TimeSpan;
 
 import javax.annotation.Nullable;
@@ -98,13 +101,15 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
 
 
     public EmailNotificationListener(final OSGIKillbillClock clock, final OSGIKillbillLogService logService, final OSGIKillbillAPI killbillAPI, final OSGIConfigPropertiesService configProperties,
-                                     OSGIKillbillDataSource dataSource, EmailNotificationConfigurationHandler emailNotificationConfigurationHandler) throws SQLException {
+                                     OSGIKillbillDataSource dataSource, EmailNotificationConfigurationHandler emailNotificationConfigurationHandler,
+                                     final ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker) throws SQLException {
         this.logService = logService;
         this.osgiKillbillAPI = killbillAPI;
         this.configProperties = configProperties;
         this.clock = clock;
         this.emailSender = new EmailSender(configProperties, logService);
         this.templateRenderer = new TemplateRenderer(new MustacheTemplateEngine(), new ResourceBundleFactory(killbillAPI.getTenantUserApi(), logService), killbillAPI.getTenantUserApi(), logService);
+        this.templateRenderer.setInvoiceFormatterTracker(invoiceFormatterTracker);
         this.dao = new ConfigurationDao(dataSource.getDataSource());
         this.emailNotificationConfigurationHandler = emailNotificationConfigurationHandler;
     }
