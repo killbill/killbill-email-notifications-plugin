@@ -118,7 +118,8 @@ public class TemplateRenderer {
         if (invoice != null) {
             // look for a custom InvoiceFormatter via our factory service tracker, if available
             final InvoiceFormatterFactory formatterFactory = (invoiceFormatterTracker != null ? invoiceFormatterTracker.getService() : null);
-            InvoiceFormatter formattedInvoice = (formatterFactory != null ? formatterFactory.createInvoiceFormatter(text, invoice, locale) : null);
+            InvoiceFormatter formattedInvoice = (formatterFactory != null 
+            		? formatterFactory.createInvoiceFormatter(text, invoice, locale, context) : null);
             if ( formattedInvoice == null ) {
                 formattedInvoice = new DefaultInvoiceFormatter(text, invoice, locale);
             }

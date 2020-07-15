@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
+import org.killbill.billing.util.callcontext.TenantContext;
 
 /**
  * API for a factory service that creates {@link InvoiceFormatter} instances.
@@ -35,11 +36,13 @@ public interface InvoiceFormatterFactory {
      * @param translator the available translations
      * @param invoice the invoice
      * @param locale the desired locale
+     * @param context the tenant context
      * @return the formatter instance, never {@literal null}
      */
     InvoiceFormatter createInvoiceFormatter(
             Map<String, String> translator,
             Invoice invoice,
-            Locale locale);
+            Locale locale,
+            TenantContext context);
 
 }
