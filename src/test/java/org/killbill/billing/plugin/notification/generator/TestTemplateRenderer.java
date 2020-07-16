@@ -217,7 +217,7 @@ public class TestTemplateRenderer {
                 "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
 
         //System.err.println(email.getBody());
-        Assert.assertEquals(email.getSubject(), "Payment Confirmation");
+        Assert.assertEquals(email.getSubject(), "Payment Confirmation, Old Boy");
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
