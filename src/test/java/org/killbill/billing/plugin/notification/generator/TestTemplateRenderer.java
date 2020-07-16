@@ -17,6 +17,11 @@
 
 package org.killbill.billing.plugin.notification.generator;
 
+
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.anyMap;
+import static org.mockito.Mockito.eq;
+
 import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -30,9 +35,6 @@ import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.catalog.api.PhaseType;
 import org.killbill.billing.catalog.api.Plan;
 import org.killbill.billing.catalog.api.PlanPhase;
-import org.killbill.billing.catalog.api.PlanPhasePriceOverride;
-import org.killbill.billing.catalog.api.PlanPhaseSpecifier;
-import org.killbill.billing.catalog.api.PlanSpecifier;
 import org.killbill.billing.catalog.api.PriceList;
 import org.killbill.billing.catalog.api.Product;
 import org.killbill.billing.catalog.api.ProductCategory;
@@ -47,26 +49,36 @@ import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.api.InvoiceItemType;
 import org.killbill.billing.invoice.api.InvoicePayment;
 import org.killbill.billing.invoice.api.InvoiceStatus;
+import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.payment.api.TransactionStatus;
 import org.killbill.billing.payment.api.TransactionType;
 import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
+import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
+import org.killbill.billing.plugin.notification.util.LocaleUtils;
 import org.killbill.billing.tenant.api.Tenant;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.tenant.api.TenantData;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.billing.util.callcontext.TenantContext;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.service.log.LogService;
+import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
@@ -75,6 +87,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -82,9 +95,25 @@ public class TestTemplateRenderer {
 
     private final Logger log = LoggerFactory.getLogger(TestTemplateRenderer.class);
 
+    @Mock
+	private BundleContext bundleContext;
+    
+    @Mock
+    private Bundle bundle;
+    
+    @Mock
+    private ServiceReference<InvoiceFormatterFactory> invoiceFormatterFactoryRef;
+    
+    @Mock
+    private InvoiceFormatterFactory invoiceFormatterFactory;
+    
+    @Mock
+    private InvoiceFormatter invoiceFormatter;
+    
     private TemplateRenderer renderer;
 
     @BeforeClass(groups = "fast")
+    @SuppressWarnings("rawtypes")
     public void beforeClass() throws Exception {
 
         LogService logService = new LogService() {
@@ -96,7 +125,7 @@ public class TestTemplateRenderer {
             public void log(int i, String s, Throwable throwable) {
                 log.info(s, throwable);
             }
-            @Override
+			@Override
             public void log(ServiceReference serviceReference, int i, String s) {
             }
             @Override
@@ -107,6 +136,11 @@ public class TestTemplateRenderer {
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
         final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi(), logService);
         renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi(), logService);
+    }
+    
+    @BeforeMethod
+    public void beforeMethdo() {
+    	MockitoAnnotations.initMocks(this);
     }
 
     @Test(groups = "fast")
@@ -337,6 +371,57 @@ public class TestTemplateRenderer {
         //System.err.println(email.getBody());
         Assert.assertEquals(email.getSubject(), "You Have a New Invoice");
 
+        Assert.assertEquals(email.getBody(), expectedBody);
+    }
+    
+    @Test(groups = "fast")
+    public void testCreateInvoiceWithCustomFormatterFactory() throws Exception {
+    	// GIVEN
+    	given(invoiceFormatterFactoryRef.getProperty(Constants.SERVICE_ID)).willReturn("foo.bar");
+    	given(invoiceFormatterFactoryRef.getBundle()).willReturn(bundle);
+    	given(bundleContext.getService(invoiceFormatterFactoryRef)).willReturn(invoiceFormatterFactory);
+    	
+    	final ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> tracker = new ServiceTracker<>(
+    			bundleContext, invoiceFormatterFactoryRef, null);
+    	renderer.setInvoiceFormatterTracker(tracker);
+    	
+        final AccountData account = createAccount();
+        final Locale accountLocale = LocaleUtils.toLocale(account.getLocale());
+        final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), account.getCurrency(), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.5500"), account.getCurrency(), "chocolate-monthly"));
+        final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
+        final TenantContext tenantContext = createTenantContext();
+        
+        @SuppressWarnings("unchecked")
+		Map<String, String> anyMap = anyMap();
+        given(invoiceFormatterFactory.createInvoiceFormatter(anyMap, eq(invoice), 
+        		eq(accountLocale), eq(tenantContext))).willReturn(invoiceFormatter);
+        
+        given(invoiceFormatter.getTargetDate()).willReturn(new LocalDate(2020,7,16));
+        given(invoiceFormatter.getFormattedBalance()).willReturn("FOO$ 9.99");
+
+        // WHEN
+        tracker.open();
+        final EmailContent email = renderer.generateEmailForInvoiceCreation(account, invoice, tenantContext);
+    	
+        // THEN
+        final String expectedBody = "*** You Have a New Invoice ***\n" +
+                "\n" +
+                "You have a new invoice from MERCHANT_NAME, due on 2020-07-16.\n" +
+                "\n" +
+                "\n" +
+                "Total: FOO$ 9.99\n" +
+                "\n" +
+                "Billed To::\n" +
+                "SauvonsLaTerre\n" +
+                "Sylvie Dupond\n" +
+                "1234 Trumpet street\n" +
+                "San Francisco, CA 94110\n" +
+                "USA\n" +
+                "\n" +
+                "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
+        Assert.assertEquals(email.getSubject(), "You Have a New Invoice");
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
