@@ -96,7 +96,7 @@ public class TestTemplateRenderer {
     private final Logger log = LoggerFactory.getLogger(TestTemplateRenderer.class);
 
     @Mock
-	private BundleContext bundleContext;
+    private BundleContext bundleContext;
     
     @Mock
     private Bundle bundle;
@@ -125,7 +125,7 @@ public class TestTemplateRenderer {
             public void log(int i, String s, Throwable throwable) {
                 log.info(s, throwable);
             }
-			@Override
+            @Override
             public void log(ServiceReference serviceReference, int i, String s) {
             }
             @Override
@@ -140,7 +140,7 @@ public class TestTemplateRenderer {
     
     @BeforeMethod(alwaysRun = true)
     public void beforeMethdo() {
-    	MockitoAnnotations.initMocks(this);
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test(groups = "fast")
@@ -376,15 +376,15 @@ public class TestTemplateRenderer {
     
     @Test(groups = "fast")
     public void testCreateInvoiceWithCustomFormatterFactory() throws Exception {
-    	// GIVEN
-    	given(invoiceFormatterFactoryRef.getProperty(Constants.SERVICE_ID)).willReturn("foo.bar");
-    	given(invoiceFormatterFactoryRef.getBundle()).willReturn(bundle);
-    	given(bundleContext.getService(invoiceFormatterFactoryRef)).willReturn(invoiceFormatterFactory);
-    	
-    	final ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> tracker = new ServiceTracker<>(
-    			bundleContext, invoiceFormatterFactoryRef, null);
-    	renderer.setInvoiceFormatterTracker(tracker);
-    	
+        // GIVEN
+        given(invoiceFormatterFactoryRef.getProperty(Constants.SERVICE_ID)).willReturn("foo.bar");
+        given(invoiceFormatterFactoryRef.getBundle()).willReturn(bundle);
+        given(bundleContext.getService(invoiceFormatterFactoryRef)).willReturn(invoiceFormatterFactory);
+        
+        final ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> tracker = new ServiceTracker<>(
+                bundleContext, invoiceFormatterFactoryRef, null);
+        renderer.setInvoiceFormatterTracker(tracker);
+        
         final AccountData account = createAccount();
         final Locale accountLocale = LocaleUtils.toLocale(account.getLocale());
         final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
@@ -394,9 +394,9 @@ public class TestTemplateRenderer {
         final TenantContext tenantContext = createTenantContext();
         
         @SuppressWarnings("unchecked")
-		Map<String, String> anyMap = anyMap();
+        Map<String, String> anyMap = anyMap();
         given(invoiceFormatterFactory.createInvoiceFormatter(anyMap, eq(invoice), 
-        		eq(accountLocale), eq(tenantContext))).willReturn(invoiceFormatter);
+                eq(accountLocale), eq(tenantContext))).willReturn(invoiceFormatter);
         
         given(invoiceFormatter.getTargetDate()).willReturn(new LocalDate(2020,7,16));
         given(invoiceFormatter.getFormattedBalance()).willReturn("FOO$ 9.99");
@@ -404,7 +404,7 @@ public class TestTemplateRenderer {
         // WHEN
         tracker.open();
         final EmailContent email = renderer.generateEmailForInvoiceCreation(account, invoice, tenantContext);
-    	
+        
         // THEN
         final String expectedBody = "*** You Have a New Invoice ***\n" +
                 "\n" +
