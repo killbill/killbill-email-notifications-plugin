@@ -123,3 +123,5 @@ logs/
 .project
 .settings/
 
+# TestNG from IDE
+/test-output
