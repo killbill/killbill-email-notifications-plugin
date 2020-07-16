@@ -1,4 +1,4 @@
-# killbill-email-notifications-plugin
+g# killbill-email-notifications-plugin
 
 Release builds are available on [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.kill-bill.billing.plugin.java%22%20AND%20a%3A%22killbill-email-notifications-plugin%22) with coordinates `org.kill-bill.billing.plugin.java:killbill-email-notifications-plugin`.
 
@@ -166,6 +166,51 @@ curl -v \
 --data-binary @/tmp/UpcomingInvoice.mustache \
 http://127.0.0.1:8080/1.0/kb/tenants/userKeyValue/killbill-email-notifications:UPCOMING_INVOICE_en_US
   ```
+
+# Custom InvoiceFormatter
+
+A custom [`InvoiceFormatter`](https://github.com/killbill/killbill-api/blob/master/src/main/java/org/killbill/billing/invoice/api/formatters/InvoiceFormatter.java)
+implementation can be provided by another Java plugin, by registering a 
+[`InvoiceFormatterFactory`](src/main/java/org/killbill/billing/plugin/notification/api/InvoiceFormatterFactory.java)
+service in the OSGi runtime.  This plugin will use the highest-ranking `InvoiceFormatterFactory`
+service found. If none are found then a default implementation will be used.
+
+A custom factory can be registered in your plugin's `org.osgi.framework.BundleActivator`. For
+example:
+
+```java
+import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
+import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
+
+public class Activator extends KillbillActivatorBase {
+
+  private MyCustomInvoiceFormatterFactory factory;
+  private ServiceRegistration<InvoiceFormatterFactory> registration = null;
+
+  @Override
+  public void start(final BundleContext context) throws Exception {
+    super.start(context);
+
+    // create custom factory instance
+    factory = new MyCustomInvoiceFormatterFactory();
+
+    // register factory as OSGi service
+    Hashtable<String, Object> properties = new Hashtable<>();
+    registration = context.registerService(InvoiceFormatterFactory.class, factory, properties);
+  }
+
+  @Override
+  public void stop(BundleContext context) throws Exception {
+    super.stop(context);
+    if (registration != null) {
+      registration.unregister();
+      registration = null;
+    }
+  }
+}
+```
 
 # Testing
 
