@@ -1,9 +1,7 @@
 # killbill-email-notifications-plugin
+![Maven Central](https://img.shields.io/maven-central/v/org.kill-bill.billing.plugin.java/killbill-email-notifications-plugin?color=blue&label=Maven%20Central)
 
-Release builds are available on [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.kill-bill.billing.plugin.java%22%20AND%20a%3A%22killbill-email-notifications-plugin%22) with coordinates `org.kill-bill.billing.plugin.java:killbill-email-notifications-plugin`.
-
-Kill Bill compatibility
------------------------
+## Kill Bill compatibility
 
 | Plugin version | Kill Bill version |
 | -------------: | ----------------: |
@@ -13,9 +11,11 @@ Kill Bill compatibility
 | 0.4.y          | 0.19.z            |
 | 0.5.y          | 0.20.z            |
 | 0.6.y          | 0.22.z            |
+| 0.7.y          | 0.22.z            |
 
-Requirements
-------------
+We've upgraded numerous dependencies in 0.7.x (required for Java 11 support).
+
+## Requirements
 
 The plugin needs a database. The latest version of the schema can be found [here](src/main/resources/ddl.sql).
 
@@ -167,9 +167,9 @@ curl -v \
 http://127.0.0.1:8080/1.0/kb/tenants/userKeyValue/killbill-email-notifications:UPCOMING_INVOICE_en_US
   ```
 
-# Testing
+## Testing
 
-## SMTP Server
+### SMTP Server
 
 In order to test the plugin, the easiest route is to start a local SMTP server. We are typically relying on the `namshi/smtp` docker image:
 
@@ -178,7 +178,7 @@ In order to test the plugin, the easiest route is to start a local SMTP server. 
 docker run -tid --name smtp_server -p 25:25  -e DISABLE_IPV6=true namshi/smtp
 ```
 
-## Scenario
+### Scenario
 
 1. [Create a tenant](https://killbill.github.io/slate/#tenant-create-a-tenant)
 2. Configure the tenant as specififed above
@@ -187,3 +187,7 @@ docker run -tid --name smtp_server -p 25:25  -e DISABLE_IPV6=true namshi/smtp
 5. [Create a external charge](https://killbill.github.io/slate/#invoice-create-external-charge-s) to trigger an invoice
 
 => You should see an email sent for the invoice and successful payment
+
+## About
+
+Kill Bill is the leading Open-Source Subscription Billing & Payments Platform. For more information about the project, go to https://killbill.io/.
