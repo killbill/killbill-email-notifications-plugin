@@ -50,7 +50,7 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         super.start(context);
 
         final String region = PluginEnvironmentConfig.getRegion(configProperties.getProperties());
-        
+
         // Register an event listener for plugin configuration (optional)
         emailNotificationConfigurationHandler = new EmailNotificationConfigurationHandler(region, PLUGIN_NAME, killbillAPI, logService, dataSource);
         final EmailNotificationConfiguration globalConfiguration = emailNotificationConfigurationHandler.createConfigurable(configProperties.getProperties());
