@@ -1,6 +1,8 @@
 /*
- * Copyright 2015-2016 Groupon, Inc
- * Copyright 2015-2016 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -86,27 +88,9 @@ public class TestTemplateRenderer {
 
     @BeforeClass(groups = "fast")
     public void beforeClass() throws Exception {
-
-        LogService logService = new LogService() {
-            @Override
-            public void log(int i, String s) {
-                log.info(s);
-            }
-            @Override
-            public void log(int i, String s, Throwable throwable) {
-                log.info(s, throwable);
-            }
-            @Override
-            public void log(ServiceReference serviceReference, int i, String s) {
-            }
-            @Override
-            public void log(ServiceReference serviceReference, int i, String s, Throwable throwable) {
-            }
-        };
-
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
-        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi(), logService);
-        renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi(), logService);
+        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi());
+        renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi());
     }
 
     @Test(groups = "fast")

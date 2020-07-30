@@ -1,6 +1,8 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -47,24 +49,7 @@ public class TestEmailSender {
 
     @Test(enabled=false)
     public void foo() throws IOException, EmailException, EmailNotificationException {
-        LogService logService = new LogService() {
-            @Override
-            public void log(int i, String s) {
-                log.info(s);
-            }
-            @Override
-            public void log(int i, String s, Throwable throwable) {
-                log.info(s, throwable);
-            }
-            @Override
-            public void log(ServiceReference serviceReference, int i, String s) {
-            }
-            @Override
-            public void log(ServiceReference serviceReference, int i, String s, Throwable throwable) {
-            }
-        };
-
-        EmailSender sender = new EmailSender(TEST_SMTP_SERVER_NAME, TEST_SMPT_SERVER_PORT, TEST_SMTP_USER, TEST_SMTP_PWD, TEST_SMTP_FROM, true, false, logService, false);
+        EmailSender sender = new EmailSender(TEST_SMTP_SERVER_NAME, TEST_SMPT_SERVER_PORT, TEST_SMTP_USER, TEST_SMTP_PWD, TEST_SMTP_FROM, true, false, false);
         final String to = "something_that_works@gmail.com";
         sender.sendPlainTextEmail(ImmutableList.of(to), ImmutableList.<String>of(), "coucou", "body", Mockito.mock(SmtpProperties.class));
     }

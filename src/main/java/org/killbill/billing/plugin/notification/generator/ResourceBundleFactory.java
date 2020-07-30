@@ -1,6 +1,8 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -24,7 +26,6 @@ import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.tenant.api.TenantKV;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.TenantContext;
-import org.osgi.service.log.LogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,9 +42,10 @@ import java.util.ResourceBundle;
 
 public class ResourceBundleFactory {
 
+    private static final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
+
     private final String DEFAULT_TRANSLATION_PATH_PREFIX = "org/killbill/billing/plugin/notification/translations/";
 
-    private final LogService logService;
     private final TenantUserApi tenantApi;
 
     public enum ResourceBundleType {
@@ -67,9 +69,8 @@ public class ResourceBundleFactory {
         }
     }
 
-    public ResourceBundleFactory(final TenantUserApi tenantApi, final LogService logService) {
+    public ResourceBundleFactory(final TenantUserApi tenantApi) {
         this.tenantApi = tenantApi;
-        this.logService = logService;
     }
 
 
@@ -83,7 +84,7 @@ public class ResourceBundleFactory {
             try {
                 return new PropertyResourceBundle(new InputStreamReader(new ByteArrayInputStream(bundle.getBytes(Charsets.UTF_8)), "UTF-8"));
             } catch (IOException e) {
-                logService.log(LogService.LOG_WARNING, String.format("Failed to de-serialize the property bundle for tenant %s and locale %s", tenantContext.getTenantId(), locale));
+                logger.warn("Failed to de-serialize the property bundle for tenant {} and locale {}", tenantContext.getTenantId(), locale);
                 // Fall through...
             }
         }

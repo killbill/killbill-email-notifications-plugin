@@ -1,6 +1,8 @@
 /*
- * Copyright 2015-2016 Groupon, Inc
- * Copyright 2015-2016 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -25,7 +27,6 @@ import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
-import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.formatters.DefaultInvoiceFormatter;
 import org.killbill.billing.plugin.notification.generator.formatters.PaymentFormatter;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
@@ -35,7 +36,6 @@ import org.killbill.billing.plugin.notification.util.LocaleUtils;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.TenantContext;
-import org.osgi.service.log.LogService;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -59,18 +59,14 @@ public class TemplateRenderer {
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;
     private final TenantUserApi tenantApi;
-    private final LogService logService;
 
     public TemplateRenderer(final TemplateEngine templateEngine,
                             final ResourceBundleFactory bundleFactory,
-                            final TenantUserApi tenantApi,
-                            final LogService logService) {
+                            final TenantUserApi tenantApi) {
         this.templateEngine = templateEngine;
         this.bundleFactory = bundleFactory;
         this.tenantApi = tenantApi;
-        this.logService = logService;
     }
-
 
     public EmailContent generateEmailForUpComingInvoice(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
         return getEmailContent(TemplateType.UPCOMING_INVOICE, account, null, invoice, null, context);

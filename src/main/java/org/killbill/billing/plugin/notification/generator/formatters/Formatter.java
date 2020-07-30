@@ -1,6 +1,8 @@
 /*
- * Copyright 2015-2016 Groupon, Inc
- * Copyright 2015-2016 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -32,7 +34,7 @@ public abstract class Formatter {
 
         final DecimalFormat numberFormatter = (DecimalFormat) DecimalFormat.getCurrencyInstance(locale);
         final DecimalFormatSymbols dfs = numberFormatter.getDecimalFormatSymbols();
-        dfs.setInternationalCurrencySymbol(currencyUnit.getCurrencyCode());
+        dfs.setInternationalCurrencySymbol(currencyUnit.getCode());
 
         try {
             final java.util.Currency currency = java.util.Currency.getInstance(currencyCode);
@@ -42,8 +44,8 @@ public abstract class Formatter {
         }
 
         numberFormatter.setDecimalFormatSymbols(dfs);
-        numberFormatter.setMinimumFractionDigits(currencyUnit.getDefaultFractionDigits());
-        numberFormatter.setMaximumFractionDigits(currencyUnit.getDefaultFractionDigits());
+        numberFormatter.setMinimumFractionDigits(currencyUnit.getDecimalPlaces());
+        numberFormatter.setMaximumFractionDigits(currencyUnit.getDecimalPlaces());
 
         return numberFormatter.format(amount.doubleValue());
     }

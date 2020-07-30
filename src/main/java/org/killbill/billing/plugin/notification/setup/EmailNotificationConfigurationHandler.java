@@ -1,6 +1,8 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -21,7 +23,6 @@ import java.util.Properties;
 
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillDataSource;
-import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +51,10 @@ public class EmailNotificationConfigurationHandler extends PluginTenantConfigura
     private final OSGIKillbillDataSource dataSource;
 
     public EmailNotificationConfigurationHandler(final String region,
-                                          final String pluginName,
-                                          final OSGIKillbillAPI osgiKillbillAPI,
-                                          final OSGIKillbillLogService osgiKillbillLogService,
-                                          final OSGIKillbillDataSource dataSource) {
-        super(pluginName, osgiKillbillAPI, osgiKillbillLogService);
+                                                 final String pluginName,
+                                                 final OSGIKillbillAPI osgiKillbillAPI,
+                                                 final OSGIKillbillDataSource dataSource) {
+        super(pluginName, osgiKillbillAPI);
         this.region = region;
         this.dataSource = dataSource;
     }

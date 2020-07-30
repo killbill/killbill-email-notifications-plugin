@@ -169,6 +169,12 @@ http://127.0.0.1:8080/1.0/kb/tenants/userKeyValue/killbill-email-notifications:U
 
 ## Testing
 
+To build, run `mvn clean install`. You can then install the plugin locally:
+
+```
+kpm install_java_plugin email-notifications --from-source-file target/killbill-email-notifications-plugin-*-SNAPSHOT.jar --destination /var/tmp/bundles
+```
+
 ### SMTP Server
 
 In order to test the plugin, the easiest route is to start a local SMTP server. We are typically relying on the `namshi/smtp` docker image:
@@ -181,7 +187,7 @@ docker run -tid --name smtp_server -p 25:25  -e DISABLE_IPV6=true namshi/smtp
 ### Scenario
 
 1. [Create a tenant](https://killbill.github.io/slate/#tenant-create-a-tenant)
-2. Configure the tenant as specififed above
+2. Configure the tenant as specified above
 3. [Create an account](https://killbill.github.io/slate/#account-create-an-account) and specifify at least the `locale` and `email`. Our default template will also require the following fields to be set on the `Account`:  `company_name`, `address1`, `city`, `state_or_province`, `postal_code`, `country`.
 4. [Add a default payment method](https://killbill.github.io/slate/#account-add-a-payment-method) and set it as default.
 5. [Create a external charge](https://killbill.github.io/slate/#invoice-create-external-charge-s) to trigger an invoice

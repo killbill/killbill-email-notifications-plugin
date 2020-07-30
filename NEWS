@@ -1,3 +1,6 @@
+0.7.0
+    Update to killbill-oss-parent 0.144.15
+
 0.6.1
     Support for HTML emails
     Fix NPE when handling external charges
