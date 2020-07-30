@@ -25,8 +25,6 @@ import org.killbill.billing.util.callcontext.TenantContext;
 
 /**
  * API for a factory service that creates {@link InvoiceFormatter} instances.
- * 
- * @author matt
  */
 public interface InvoiceFormatterFactory {
 
