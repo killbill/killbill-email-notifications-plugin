@@ -138,7 +138,7 @@ public class TestTemplateRenderer {
         renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi(), logService);
     }
     
-    @BeforeMethod(alwaysRun = true)
+    @BeforeMethod(groups = "fast")
     public void beforeMethdo() {
         MockitoAnnotations.initMocks(this);
     }
