@@ -42,6 +42,7 @@ import org.killbill.billing.invoice.api.DryRunType;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceApiException;
 import org.killbill.billing.invoice.api.InvoicePayment;
+import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.notification.plugin.api.ExtBusEvent;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import org.killbill.billing.notification.plugin.api.NotificationPluginApiRetryException;
@@ -66,6 +67,8 @@ import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.util.callcontext.TenantContext;
+import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
+import org.osgi.util.tracker.ServiceTracker;
 import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,12 +105,14 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
 
 
     public EmailNotificationListener(final OSGIKillbillClock clock, final OSGIKillbillAPI killbillAPI, final OSGIConfigPropertiesService configProperties,
-                                     OSGIKillbillDataSource dataSource, EmailNotificationConfigurationHandler emailNotificationConfigurationHandler) throws SQLException {
+                                     OSGIKillbillDataSource dataSource, EmailNotificationConfigurationHandler emailNotificationConfigurationHandler,
+                                     final ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker) throws SQLException {
         this.osgiKillbillAPI = killbillAPI;
         this.configProperties = configProperties;
         this.clock = clock;
         this.emailSender = new EmailSender(configProperties);
         this.templateRenderer = new TemplateRenderer(new MustacheTemplateEngine(), new ResourceBundleFactory(killbillAPI.getTenantUserApi()), killbillAPI.getTenantUserApi());
+        this.templateRenderer.setInvoiceFormatterTracker(invoiceFormatterTracker);
         this.dao = new ConfigurationDao(dataSource.getDataSource());
         this.emailNotificationConfigurationHandler = emailNotificationConfigurationHandler;
     }

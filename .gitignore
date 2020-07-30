@@ -223,3 +223,6 @@ Temporary Items
 *.tmproj
 *.tmproject
 tmtags
+
+# TestNG from IDE
+/test-output

@@ -25,6 +25,7 @@ import org.killbill.billing.entitlement.api.Subscription;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.payment.api.PaymentTransaction;
+import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.formatters.DefaultInvoiceFormatter;
@@ -36,6 +37,7 @@ import org.killbill.billing.plugin.notification.util.LocaleUtils;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.TenantContext;
+import org.osgi.util.tracker.ServiceTracker;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -59,6 +61,8 @@ public class TemplateRenderer {
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;
     private final TenantUserApi tenantApi;
+
+    private ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker;
 
     public TemplateRenderer(final TemplateEngine templateEngine,
                             final ResourceBundleFactory bundleFactory,
@@ -109,7 +113,13 @@ public class TemplateRenderer {
             data.put("subscription", subscription);
         }
         if (invoice != null) {
-            final InvoiceFormatter formattedInvoice = new DefaultInvoiceFormatter(text, invoice, locale);
+            // look for a custom InvoiceFormatter via our factory service tracker, if available
+            final InvoiceFormatterFactory formatterFactory = (invoiceFormatterTracker != null ? invoiceFormatterTracker.getService() : null);
+            InvoiceFormatter formattedInvoice = (formatterFactory != null
+                    ? formatterFactory.createInvoiceFormatter(text, invoice, locale, context) : null);
+            if ( formattedInvoice == null ) {
+                formattedInvoice = new DefaultInvoiceFormatter(text, invoice, locale);
+            }
             data.put("invoice", formattedInvoice);
         }
         if (paymentTransaction != null) {
@@ -185,6 +195,18 @@ public class TemplateRenderer {
         } catch (IOException e) {
             return null;
         }
+    }
+
+    /**
+     * Configure a custom {@link InvoiceFormatterFactory} via some other plugin.
+     *
+     * <p>If this service is not configured, or the tracker does not return a service via {@link ServiceTracker#getService()},
+     * then a {@link DefaultInvoiceFormatter} instance will be used.</p>
+     *
+     * @param invoiceFormatterTracker the service tracker to use
+     */
+    public void setInvoiceFormatterTracker(ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker) {
+        this.invoiceFormatterTracker = invoiceFormatterTracker;
     }
 
 }
