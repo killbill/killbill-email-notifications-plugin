@@ -56,7 +56,7 @@ import static org.killbill.billing.plugin.notification.exception.EmailNotificati
 
 public class TemplateRenderer {
 
-    private final String DEFAULT_TEMPLATE_PATH_PREFIX = "org/killbill/billing/plugin/notification/templates/";
+    private static final String DEFAULT_TEMPLATE_PATH_PREFIX = "org/killbill/billing/plugin/notification/templates/";
 
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;

@@ -305,10 +305,9 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
 
     private void sendEmail(final Account account, final EmailContent emailContent, final TenantContext context) throws IOException, EmailException, EmailNotificationException {
         final Iterable<String> cc = Iterables.transform(osgiKillbillAPI.getAccountUserApi().getEmails(account.getId(), context), new Function<AccountEmail, String>() {
-            @Nullable
             @Override
-            public String apply(AccountEmail input) {
-                return input.getEmail();
+            public String apply(final AccountEmail input) {
+                return input == null ? null : input.getEmail();
             }
         });
 

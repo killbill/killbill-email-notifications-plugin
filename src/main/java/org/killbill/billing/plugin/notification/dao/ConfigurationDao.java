@@ -49,11 +49,6 @@ public class ConfigurationDao extends PluginDao
         super(dataSource);
     }
 
-    public ConfigurationDao(final DataSource dataSource, final Properties properties) throws SQLException {
-        super(dataSource);
-        Enumeration<?> eventType = properties.propertyNames();
-    }
-
     public List<EmailNotificationsConfiguration> getEventTypes(final List<UUID> kbAccountId, final UUID kbTenantId) throws SQLException {
         return execute(dataSource.getConnection(),
                        new WithConnectionCallback<List<EmailNotificationsConfiguration>>() {

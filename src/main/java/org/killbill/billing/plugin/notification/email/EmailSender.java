@@ -72,7 +72,7 @@ public class EmailSender {
 
     public EmailSender(final OSGIConfigPropertiesService configProperties) {
         this(configProperties.getString(SERVER_NAME_PROP),
-                (configProperties.getString(SERVER_PORT_PROP) != null ? Integer.valueOf(configProperties.getString(SERVER_PORT_PROP)) : 25),
+                (configProperties.getString(SERVER_PORT_PROP) != null ? Integer.parseInt(configProperties.getString(SERVER_PORT_PROP)) : 25),
                 configProperties.getString(SMTP_USER_PROP),
                 configProperties.getString(SMTP_PWD_PROP),
                 configProperties.getString(SMTP_FROM_PROP),
