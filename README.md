@@ -5,7 +5,9 @@ The Kill Bill email notification plugin is a plugin that can be used to send ema
 
 ## Requirements
 
-The plugin requires Kill Bill and Kaui installed. The [Getting Started](https://docs.killbill.io/latest/getting_started.htm) document explains how to set this up. 
+- The plugin requires Kill Bill and Kaui installed. The [Getting Started](https://docs.killbill.io/latest/getting_started.htm) document explains how to set this up. 
+
+- In addition, the plugin also needs a database. The latest version of the schema can be found [here](https://github.com/killbill/killbill-email-notifications-plugin/blob/master/src/main/resources/ddl.sql).
 
 ## Versions
 
