@@ -273,7 +273,10 @@
                 <configuration>
                     <instructions>
                         <Bundle-Activator>org.killbill.billing.plugin.notification.setup.EmailNotificationActivator</Bundle-Activator>
-                        <Export-Package />
+                        <Export-Package>
+                        	org.killbill.billing.plugin.notification.api,
+                        	org.killbill.billing.plugin.notification.generator.*
+                        </Export-Package>
                         <Private-Package>org.killbill.billing.plugin.notification.*</Private-Package>
                         <!-- Optional resolution because exported by the Felix system bundle -->
                         <Import-Package>

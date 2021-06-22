@@ -273,4 +273,23 @@ public class DefaultInvoiceFormatter implements InvoiceFormatter {
     public String getFormattedRefundedAmount() {
         return getFormattedAmountByLocaleAndInvoiceCurrency(getRefundedAmount(), getCurrency().toString(), locale);
     }
+
+    // Expose the fields for children classes. This is useful for further customization of the invoices
+
+    protected Map<String, String> getTranslator() {
+		return translator;
+	}
+
+	protected Invoice getInvoice() {
+		return invoice;
+	}
+
+	protected Locale getLocale() {
+		return locale;
+	}
+
+	protected DateTimeFormatter getDateFormatter() {
+		return dateFormatter;
+	}
+    
 }
