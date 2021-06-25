@@ -25,7 +25,7 @@
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>killbill-email-notifications-plugin</artifactId>
-    <version>0.7.0-SNAPSHOT</version>
+    <version>0.7.0</version>
     <packaging>bundle</packaging>
     <name>Kill Bill OSGI Email Notifications Plugin</name>
     <description>Kill Bill Email Notifications Plugin</description>
@@ -33,6 +33,7 @@
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-email-notifications-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:killbill/killbill-email-notifications-plugin.git</developerConnection>
+        <tag>killbill-email-notifications-plugin-0.7.0</tag>
         <url>http://github.com/killbill/killbill-email-notifications-plugin/tree/master</url>
     </scm>
     <issueManagement>
