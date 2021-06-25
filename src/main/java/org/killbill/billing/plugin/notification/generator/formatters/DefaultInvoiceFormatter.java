@@ -1,6 +1,8 @@
 /*
- * Copyright 2015-2016 Groupon, Inc
- * Copyright 2015-2016 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2020 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -277,19 +279,19 @@ public class DefaultInvoiceFormatter implements InvoiceFormatter {
     // Expose the fields for children classes. This is useful for further customization of the invoices
 
     protected Map<String, String> getTranslator() {
-		return translator;
-	}
+        return translator;
+    }
 
-	protected Invoice getInvoice() {
-		return invoice;
-	}
+    protected Invoice getInvoice() {
+        return invoice;
+    }
 
-	protected Locale getLocale() {
-		return locale;
-	}
+    protected Locale getLocale() {
+        return locale;
+    }
 
-	protected DateTimeFormatter getDateFormatter() {
-		return dateFormatter;
-	}
+    protected DateTimeFormatter getDateFormatter() {
+        return dateFormatter;
+    }
     
 }

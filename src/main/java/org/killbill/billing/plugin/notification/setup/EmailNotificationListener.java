@@ -1,5 +1,7 @@
 /*
+ * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
  * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
@@ -20,8 +22,6 @@ package org.killbill.billing.plugin.notification.setup;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.UUID;
-
-import javax.annotation.Nullable;
 
 import org.apache.commons.mail.EmailException;
 import org.joda.time.DateTime;
@@ -78,9 +78,9 @@ import com.samskivert.mustache.MustacheException;
 
 public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OSGIKillbillEventHandler {
 
-    private static final String INVOICE_DRY_RUN_TIME_PROPERTY = "org.killbill.invoice.dryRunNotificationSchedule";
-
     private static final Logger logger = LoggerFactory.getLogger(EmailNotificationListener.class);
+
+    private static final String INVOICE_DRY_RUN_TIME_PROPERTY = "org.killbill.invoice.dryRunNotificationSchedule";
 
     private static final NullDryRunArguments NULL_DRY_RUN_ARGUMENTS = new NullDryRunArguments();
 
@@ -133,7 +133,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             final Account account = osgiKillbillAPI.getAccountUserApi().getAccountById(killbillEvent.getAccountId(), new EmailNotificationContext(killbillEvent.getAccountId(), killbillEvent.getTenantId()));
             final String to = account.getEmail();
             if (to == null) {
-                logger.info("Account " + account.getId() + " does not have an email address configured, skip...");
+                logger.info("Account {} does not have an email address configured, skip...", account.getId());
                 return;
             }
 
@@ -159,9 +159,8 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
                     break;
             }
 
-            logger.info("Received event %s for object type={}, id={}",
-                        killbillEvent.getEventType(), killbillEvent.getObjectType(), killbillEvent.getObjectId());
-
+            logger.info("Received event {} for object type = {}, id = {}",
+                         killbillEvent.getEventType(), killbillEvent.getObjectType(), killbillEvent.getObjectId());
         } catch (final EmailNotificationException e) {
             logger.warn(e.getMessage(), e);
         } catch (final AccountApiException e) {
@@ -301,10 +300,9 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
 
     private void sendEmail(final Account account, final EmailContent emailContent, final TenantContext context) throws IOException, EmailException, EmailNotificationException {
         final Iterable<String> cc = Iterables.transform(osgiKillbillAPI.getAccountUserApi().getEmails(account.getId(), context), new Function<AccountEmail, String>() {
-            @Nullable
             @Override
-            public String apply(AccountEmail input) {
-                return input.getEmail();
+            public String apply(final AccountEmail input) {
+                return input == null ? null : input.getEmail();
             }
         });
 

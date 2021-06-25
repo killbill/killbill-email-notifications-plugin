@@ -1,6 +1,8 @@
 /*
- * Copyright 2015-2020 Groupon, Inc
- * Copyright 2015-2021 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -70,7 +72,7 @@ public class EmailSender {
 
     public EmailSender(final OSGIConfigPropertiesService configProperties) {
         this(configProperties.getString(SERVER_NAME_PROP),
-             (configProperties.getString(SERVER_PORT_PROP) != null ? Integer.valueOf(configProperties.getString(SERVER_PORT_PROP)) : 25),
+             (configProperties.getString(SERVER_PORT_PROP) != null ? Integer.parseInt(configProperties.getString(SERVER_PORT_PROP)) : 25),
              configProperties.getString(SMTP_USER_PROP),
              configProperties.getString(SMTP_PWD_PROP),
              configProperties.getString(SMTP_FROM_PROP),
@@ -126,6 +128,7 @@ public class EmailSender {
                      JOINER_ON_COMMA.join(cc),
                      subject,
                      body);
+
         final SimpleEmail email = new SimpleEmail();
         email.setCharset("utf-8");
         email.setMsg(body);
@@ -161,7 +164,7 @@ public class EmailSender {
             }
         }
 
-        email.setSSL(smtp.isUseSSL());
+        email.setSSLOnConnect(smtp.isUseSSL());
 
         logger.info("Sending email to={}, cc={}, subject={}", to, cc, subject);
         email.send();

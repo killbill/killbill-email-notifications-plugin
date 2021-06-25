@@ -1,6 +1,8 @@
 /*
- * Copyright 2015-2020 Groupon, Inc
- * Copyright 2015-2021 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -96,8 +98,8 @@ public class TestTemplateRenderer extends TestBase {
     private final Logger log = LoggerFactory.getLogger(TestTemplateRenderer.class);
 
     @Mock
-	private BundleContext bundleContext;
-    
+    private BundleContext bundleContext;
+
     @Mock
     private Bundle bundle;
     
@@ -119,7 +121,7 @@ public class TestTemplateRenderer extends TestBase {
         final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi());
         renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi());
     }
-    
+
     @BeforeMethod(groups = "fast")
     public void beforeMethod() {
     	MockitoAnnotations.initMocks(this);
@@ -199,7 +201,7 @@ public class TestTemplateRenderer extends TestBase {
                 "If you have any questions about your account, please reply to this email or contact MERCHANT_NAME Support at: (888) 555-1234";
 
         //System.err.println(email.getBody());
-        Assert.assertEquals(email.getSubject(), "Payment Confirmation");
+        Assert.assertEquals(email.getSubject(), "Payment Confirmation, Old Boy");
         Assert.assertEquals(email.getBody(), expectedBody);
     }
 
@@ -376,17 +378,17 @@ public class TestTemplateRenderer extends TestBase {
         final TenantContext tenantContext = createTenantContext();
         
         @SuppressWarnings("unchecked")
-		Map<String, String> anyMap = anyMap();
+        Map<String, String> anyMap = anyMap();
         given(invoiceFormatterFactory.createInvoiceFormatter(anyMap, eq(invoice), 
-        		eq(accountLocale), eq(tenantContext))).willReturn(invoiceFormatter);
-        
+                eq(accountLocale), eq(tenantContext))).willReturn(invoiceFormatter);
+
         given(invoiceFormatter.getTargetDate()).willReturn(new LocalDate(2020,7,16));
         given(invoiceFormatter.getFormattedBalance()).willReturn("FOO$ 9.99");
 
         // WHEN
         tracker.open();
         final EmailContent email = renderer.generateEmailForInvoiceCreation(account, invoice, tenantContext);
-    	
+
         // THEN
         final String expectedBody = "*** You Have a New Invoice ***\n" +
                 "\n" +

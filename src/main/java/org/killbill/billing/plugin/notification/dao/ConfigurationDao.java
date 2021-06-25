@@ -1,5 +1,7 @@
 /*
+ * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2020-2020 Equinix, Inc
  * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
@@ -48,11 +50,6 @@ public class ConfigurationDao extends PluginDao
     
     public ConfigurationDao(final DataSource dataSource) throws SQLException {
         super(dataSource);
-    }
-
-    public ConfigurationDao(final DataSource dataSource, final Properties properties) throws SQLException {
-        super(dataSource);
-        Enumeration<?> eventType = properties.propertyNames();
     }
 
     public List<EmailNotificationsConfiguration> getEventTypes(final List<UUID> kbAccountIds, final UUID kbTenantId) throws SQLException {

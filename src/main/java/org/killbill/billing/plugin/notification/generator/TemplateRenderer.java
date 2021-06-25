@@ -1,6 +1,7 @@
 /*
- * Copyright 2015-2020 Groupon, Inc
- * Copyright 2015-2021 The Billing Project, LLC
+ * Copyright 2010-2014 Ning, Inc.
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -56,11 +57,12 @@ import static org.killbill.billing.plugin.notification.exception.EmailNotificati
 
 public class TemplateRenderer {
 
-    private final String DEFAULT_TEMPLATE_PATH_PREFIX = "org/killbill/billing/plugin/notification/templates/";
+    private static final String DEFAULT_TEMPLATE_PATH_PREFIX = "org/killbill/billing/plugin/notification/templates/";
 
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;
     private final TenantUserApi tenantApi;
+
     private ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker;
 
     public TemplateRenderer(final TemplateEngine templateEngine,
@@ -70,7 +72,6 @@ public class TemplateRenderer {
         this.bundleFactory = bundleFactory;
         this.tenantApi = tenantApi;
     }
-
 
     public EmailContent generateEmailForUpComingInvoice(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
         return getEmailContent(TemplateType.UPCOMING_INVOICE, account, null, invoice, null, context);
@@ -115,7 +116,7 @@ public class TemplateRenderer {
         if (invoice != null) {
             // look for a custom InvoiceFormatter via our factory service tracker, if available
             final InvoiceFormatterFactory formatterFactory = (invoiceFormatterTracker != null ? invoiceFormatterTracker.getService() : null);
-            InvoiceFormatter formattedInvoice = (formatterFactory != null 
+            InvoiceFormatter formattedInvoice = (formatterFactory != null
             		? formatterFactory.createInvoiceFormatter(text, invoice, locale, context) : null);
             if ( formattedInvoice == null ) {
                 formattedInvoice = new DefaultInvoiceFormatter(text, invoice, locale);
@@ -199,7 +200,7 @@ public class TemplateRenderer {
 
     /**
      * Configure a custom {@link InvoiceFormatterFactory} via some other plugin.
-     * 
+     *
      * <p>If this service is not configured, or the tracker does not return a service via {@link ServiceTracker#getService()},
      * then a {@link DefaultInvoiceFormatter} instance will be used.</p>
      * 

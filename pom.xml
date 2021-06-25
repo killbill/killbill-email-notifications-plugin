@@ -40,6 +40,9 @@
         <url>https://github.com/killbill/killbill-email-notifications-plugin/issues</url>
     </issueManagement>
     <properties>
+        <check.fail-spotbugs>true</check.fail-spotbugs>
+        <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
+        <osgi.export>org.killbill.billing.plugin.notification.api,org.killbill.billing.plugin.notification.generator.*</osgi.export>
         <osgi.private>org.killbill.billing.plugin.notification.*</osgi.private>
     </properties>
     <dependencyManagement>
@@ -71,7 +74,7 @@
             <exclusions>
                 <exclusion>
                     <artifactId>activation</artifactId>
-                    <!-- Use jakarta.activation-api instead -->
+                    <!-- We use jakarta.activation:jakarta.activation-api instead -->
                     <groupId>javax.activation</groupId>
                 </exclusion>
             </exclusions>

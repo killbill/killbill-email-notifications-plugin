@@ -1,4 +1,5 @@
 /*
+ * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
  * Copyright 2014-2021 The Billing Project, LLC
  *
