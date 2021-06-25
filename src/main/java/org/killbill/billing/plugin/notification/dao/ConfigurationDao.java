@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -35,6 +35,9 @@ import org.killbill.billing.plugin.dao.PluginDao;
 import org.killbill.billing.plugin.notification.dao.gen.Tables;
 import org.killbill.billing.plugin.notification.dao.gen.tables.pojos.EmailNotificationsConfiguration;
 
+import com.google.common.base.Functions;
+import com.google.common.collect.Lists;
+
 public class ConfigurationDao extends PluginDao
 {
     protected static final String RECORD_ID = "RECORD_ID";
@@ -52,7 +55,7 @@ public class ConfigurationDao extends PluginDao
         Enumeration<?> eventType = properties.propertyNames();
     }
 
-    public List<EmailNotificationsConfiguration> getEventTypes(final List<UUID> kbAccountId, final UUID kbTenantId) throws SQLException {
+    public List<EmailNotificationsConfiguration> getEventTypes(final List<UUID> kbAccountIds, final UUID kbTenantId) throws SQLException {
         return execute(dataSource.getConnection(),
                        new WithConnectionCallback<List<EmailNotificationsConfiguration>>() {
                            @Override
@@ -60,7 +63,7 @@ public class ConfigurationDao extends PluginDao
                                return DSL.using(conn, dialect, settings)
                                          .selectFrom(Tables.EMAIL_NOTIFICATIONS_CONFIGURATION)
                                          .where(DSL.field(KB_TENANT_ID).equal(kbTenantId.toString()))
-                                         .and(DSL.field(KB_ACCOUNT_ID).in(kbAccountId))
+                                         .and(DSL.field(KB_ACCOUNT_ID).in(Lists.<UUID, String>transform(kbAccountIds, Functions.toStringFunction())))
                                          .orderBy(DSL.field(RECORD_ID).asc())
                                          .fetch().into(EmailNotificationsConfiguration.class);
                            }

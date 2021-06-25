@@ -23,113 +23,77 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import javax.sql.DataSource;
-
 import org.jooby.Result;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
-import org.killbill.billing.osgi.libs.killbill.OSGIKillbillClock;
-import org.killbill.billing.osgi.libs.killbill.OSGIKillbillDataSource;
-import org.killbill.billing.plugin.TestWithEmbeddedDBBase;
+import org.killbill.billing.plugin.notification.TestBase;
 import org.killbill.billing.plugin.notification.dao.gen.tables.pojos.EmailNotificationsConfiguration;
 import org.killbill.billing.tenant.api.Tenant;
-import org.killbill.clock.ClockMock;
 import org.mockito.Mockito;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.Assert;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-public class TestEmailNotificationServlet extends TestWithEmbeddedDBBase {
-
-    private final Logger log = LoggerFactory.getLogger(TestEmailNotificationServlet.class);
-
-    protected OSGIKillbillDataSource dataSource;
-    protected OSGIKillbillClock clock;
-
-    @BeforeMethod(groups = "slow")
-    public void setup() throws IOException {
-
-        dataSource = buildOSGIKillbillDataSource(embeddedDB.getDataSource());
-        clock = buildOSGIKillbillClock(new ClockMock());
-
-    }
+public class TestEmailNotificationServlet extends TestBase {
 
     @Test(groups = "slow")
     public void updateConfiguration() throws IOException {
         final UUID kbTenantId = UUID.randomUUID();
         final UUID kbAccountId = UUID.randomUUID();
-        Optional<ExtBusEventType> event = Optional.of(ExtBusEventType.INVOICE_PAYMENT_SUCCESS);
+        final Optional<ExtBusEventType> event = Optional.of(ExtBusEventType.INVOICE_PAYMENT_SUCCESS);
 
-        List<ExtBusEventType> eventTypes = new ArrayList<ExtBusEventType>();
+        final List<ExtBusEventType> eventTypes = new ArrayList<ExtBusEventType>();
         eventTypes.add(ExtBusEventType.INVOICE_PAYMENT_SUCCESS);
         eventTypes.add(ExtBusEventType.SUBSCRIPTION_CANCEL);
 
-        EmailNotificationServlet servlet =  new EmailNotificationServlet(dataSource,clock);
+        final EmailNotificationServlet servlet = new EmailNotificationServlet(dao, osgiClock);
         Result result = servlet.isListening();
-        Assert.assertEquals(result.status().get().value(),200);
+        Assert.assertEquals(result.status().get().value(), 200);
 
         result = servlet.getEventTypesPerAccount(kbAccountId, buildTenant(kbTenantId), event);
-        Assert.assertEquals(result.status().get().value(),404);
+        Assert.assertEquals(result.status().get().value(), 404);
 
         result = servlet.doUpdateEventTypePerAccount(kbAccountId, buildTenant(kbTenantId), eventTypes);
-        Assert.assertEquals(result.status().get().value(),201);
+        Assert.assertEquals(result.status().get().value(), 201);
 
         result = servlet.getEventTypesPerAccount(kbAccountId, buildTenant(kbTenantId), event);
-        EmailNotificationsConfiguration configuration = result.get();
-        Assert.assertEquals(configuration.getKbAccountId(),kbAccountId.toString());
-        Assert.assertEquals(configuration.getKbTenantId(),kbTenantId.toString());
-        Assert.assertEquals(configuration.getEventType(),ExtBusEventType.INVOICE_PAYMENT_SUCCESS.toString());
-        Assert.assertEquals(result.status().get().value(),200);
+        final EmailNotificationsConfiguration configuration = result.get();
+        Assert.assertEquals(configuration.getKbAccountId(), kbAccountId.toString());
+        Assert.assertEquals(configuration.getKbTenantId(), kbTenantId.toString());
+        Assert.assertEquals(configuration.getEventType(), ExtBusEventType.INVOICE_PAYMENT_SUCCESS.toString());
+        Assert.assertEquals(result.status().get().value(), 200);
 
     }
 
     @Test(groups = "slow")
-    public void updateMulipleConfiguration() throws IOException
-    {
+    public void updateMulipleConfiguration() throws IOException {
         Result result = null;
-        final  List<UUID> kbAccountIds = new ArrayList<>();
-        for(int i=0; i<50; i++){
+        final List<UUID> kbAccountIds = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
             kbAccountIds.add(UUID.randomUUID());
         }
 
         final UUID kbTenantId = UUID.randomUUID();
         final Tenant tenant = buildTenant(kbTenantId);
 
-        List<ExtBusEventType> eventTypes = new ArrayList<ExtBusEventType>();
+        final List<ExtBusEventType> eventTypes = new ArrayList<ExtBusEventType>();
         eventTypes.add(ExtBusEventType.INVOICE_PAYMENT_SUCCESS);
         eventTypes.add(ExtBusEventType.SUBSCRIPTION_CANCEL);
-        EmailNotificationServlet servlet =  new EmailNotificationServlet(dataSource,clock);
+        final EmailNotificationServlet servlet = new EmailNotificationServlet(dao, osgiClock);
 
-        for(UUID kbAccountId : kbAccountIds) {
+        for (final UUID kbAccountId : kbAccountIds) {
             result = servlet.doUpdateEventTypePerAccount(kbAccountId, tenant, eventTypes);
             Assert.assertEquals(result.status().get().value(), 201);
         }
 
         result = servlet.getEventTypes(kbAccountIds, buildTenant(kbTenantId));
-        List<EmailNotificationsConfiguration> configurations = result.get();
-        Assert.assertEquals(configurations.size(),kbAccountIds.size() * eventTypes.size());
-        Assert.assertEquals(result.status().get().value(),200);
+        final List<EmailNotificationsConfiguration> configurations = result.get();
+        Assert.assertEquals(configurations.size(), kbAccountIds.size() * eventTypes.size());
+        Assert.assertEquals(result.status().get().value(), 200);
     }
 
-    private Tenant buildTenant(UUID kbTenantId) throws IOException {
+    private Tenant buildTenant(final UUID kbTenantId) throws IOException {
         final Tenant tenant = (Tenant) Mockito.mock(Tenant.class);
         Mockito.when(tenant.getId()).thenReturn(kbTenantId);
 
         return tenant;
-    }
-
-    private OSGIKillbillDataSource buildOSGIKillbillDataSource(DataSource _dataSource) throws IOException {
-        final OSGIKillbillDataSource dataSource = (OSGIKillbillDataSource) Mockito.mock(OSGIKillbillDataSource.class);
-        Mockito.when(dataSource.getDataSource()).thenReturn(_dataSource);
-
-        return dataSource;
-    }
-
-    private OSGIKillbillClock buildOSGIKillbillClock(ClockMock _clock) {
-        final OSGIKillbillClock clock = (OSGIKillbillClock) Mockito.mock(OSGIKillbillClock.class);
-        Mockito.when(clock.getClock()).thenReturn(_clock);
-
-        return clock;
     }
 }

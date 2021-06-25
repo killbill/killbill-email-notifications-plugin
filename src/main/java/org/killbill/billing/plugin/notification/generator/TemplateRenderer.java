@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2016 Groupon, Inc
- * Copyright 2015-2016 The Billing Project, LLC
+ * Copyright 2015-2020 Groupon, Inc
+ * Copyright 2015-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,29 +17,6 @@
 
 package org.killbill.billing.plugin.notification.generator;
 
-import com.google.common.base.Strings;
-import org.killbill.billing.account.api.AccountData;
-import org.killbill.billing.entitlement.api.Subscription;
-import org.killbill.billing.invoice.api.Invoice;
-import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
-import org.killbill.billing.payment.api.PaymentTransaction;
-import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
-import org.killbill.billing.plugin.notification.email.EmailContent;
-import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
-import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
-import org.killbill.billing.plugin.notification.generator.formatters.DefaultInvoiceFormatter;
-import org.killbill.billing.plugin.notification.generator.formatters.PaymentFormatter;
-import org.killbill.billing.plugin.notification.templates.TemplateEngine;
-import org.killbill.billing.plugin.notification.templates.TemplateType;
-import org.killbill.billing.plugin.notification.util.IOUtils;
-import org.killbill.billing.plugin.notification.util.LocaleUtils;
-import org.killbill.billing.tenant.api.TenantApiException;
-import org.killbill.billing.tenant.api.TenantUserApi;
-import org.killbill.billing.util.callcontext.TenantContext;
-import org.osgi.service.log.LogService;
-import org.osgi.util.tracker.ServiceTracker;
-
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -51,6 +28,29 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import javax.annotation.Nullable;
+
+import org.killbill.billing.account.api.AccountData;
+import org.killbill.billing.entitlement.api.Subscription;
+import org.killbill.billing.invoice.api.Invoice;
+import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
+import org.killbill.billing.payment.api.PaymentTransaction;
+import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
+import org.killbill.billing.plugin.notification.email.EmailContent;
+import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
+import org.killbill.billing.plugin.notification.generator.formatters.DefaultInvoiceFormatter;
+import org.killbill.billing.plugin.notification.generator.formatters.PaymentFormatter;
+import org.killbill.billing.plugin.notification.templates.TemplateEngine;
+import org.killbill.billing.plugin.notification.templates.TemplateType;
+import org.killbill.billing.plugin.notification.util.IOUtils;
+import org.killbill.billing.plugin.notification.util.LocaleUtils;
+import org.killbill.billing.tenant.api.TenantApiException;
+import org.killbill.billing.tenant.api.TenantUserApi;
+import org.killbill.billing.util.callcontext.TenantContext;
+import org.osgi.util.tracker.ServiceTracker;
+
+import com.google.common.base.Strings;
+
 import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.TEMPLATE_INVALID;
 import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.TRANSLATION_INVALID;
 
@@ -61,17 +61,14 @@ public class TemplateRenderer {
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;
     private final TenantUserApi tenantApi;
-    private final LogService logService;
     private ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker;
 
     public TemplateRenderer(final TemplateEngine templateEngine,
                             final ResourceBundleFactory bundleFactory,
-                            final TenantUserApi tenantApi,
-                            final LogService logService) {
+                            final TenantUserApi tenantApi) {
         this.templateEngine = templateEngine;
         this.bundleFactory = bundleFactory;
         this.tenantApi = tenantApi;
-        this.logService = logService;
     }
 
 

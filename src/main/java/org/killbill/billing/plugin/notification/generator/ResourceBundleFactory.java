@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2015-2020 Groupon, Inc
+ * Copyright 2015-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,17 +17,6 @@
 
 package org.killbill.billing.plugin.notification.generator;
 
-import com.google.common.base.Charsets;
-import org.killbill.billing.plugin.notification.setup.EmailNotificationActivator;
-import org.killbill.billing.plugin.notification.util.LocaleUtils;
-import org.killbill.billing.tenant.api.TenantApiException;
-import org.killbill.billing.tenant.api.TenantKV;
-import org.killbill.billing.tenant.api.TenantUserApi;
-import org.killbill.billing.util.callcontext.TenantContext;
-import org.osgi.service.log.LogService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,11 +28,23 @@ import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
+import org.killbill.billing.plugin.notification.setup.EmailNotificationActivator;
+import org.killbill.billing.plugin.notification.util.LocaleUtils;
+import org.killbill.billing.tenant.api.TenantApiException;
+import org.killbill.billing.tenant.api.TenantKV;
+import org.killbill.billing.tenant.api.TenantUserApi;
+import org.killbill.billing.util.callcontext.TenantContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Charsets;
+
 public class ResourceBundleFactory {
 
     private final String DEFAULT_TRANSLATION_PATH_PREFIX = "org/killbill/billing/plugin/notification/translations/";
 
-    private final LogService logService;
+    private final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
+
     private final TenantUserApi tenantApi;
 
     public enum ResourceBundleType {
@@ -67,12 +68,9 @@ public class ResourceBundleFactory {
         }
     }
 
-    public ResourceBundleFactory(final TenantUserApi tenantApi, final LogService logService) {
+    public ResourceBundleFactory(final TenantUserApi tenantApi) {
         this.tenantApi = tenantApi;
-        this.logService = logService;
     }
-
-
 
     public ResourceBundle createBundle(final Locale locale, final ResourceBundleType type, final TenantContext tenantContext) throws TenantApiException {
         if (tenantContext.getTenantId() == null) {
@@ -83,7 +81,7 @@ public class ResourceBundleFactory {
             try {
                 return new PropertyResourceBundle(new InputStreamReader(new ByteArrayInputStream(bundle.getBytes(Charsets.UTF_8)), "UTF-8"));
             } catch (IOException e) {
-                logService.log(LogService.LOG_WARNING, String.format("Failed to de-serialize the property bundle for tenant %s and locale %s", tenantContext.getTenantId(), locale));
+                logger.warn("Failed to de-serialize the property bundle for tenant {} and locale {}", tenantContext.getTenantId(), locale);
                 // Fall through...
             }
         }

@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2015 Groupon, Inc
- * Copyright 2015-2015 The Billing Project, LLC
+ * Copyright 2015-2020 Groupon, Inc
+ * Copyright 2015-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,21 +17,22 @@
 
 package org.killbill.billing.plugin.notification.email;
 
-import com.google.common.base.Joiner;
+import java.io.IOException;
+import java.util.List;
+
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
+
 import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.apache.commons.mail.SimpleEmail;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
-import org.killbill.billing.plugin.notification.setup.EmailNotificationConfiguration;
-import org.osgi.service.log.LogService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.List;
-
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
+import com.google.common.base.Joiner;
 
 import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.EMAIL_ADDRESS_INVALID;
 import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.RECIPIENT_EMAIL_ADDRESS_REQUIRED;
@@ -43,6 +44,8 @@ import static org.killbill.billing.plugin.notification.exception.EmailNotificati
 public class EmailSender {
 
     private static final Joiner JOINER_ON_COMMA = Joiner.on(", ");
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailSender.class);
 
     /* Reuse Kill Bill email properties; if needed we can have a different set for the plugin */
     private static final String SERVER_NAME_PROP = "org.killbill.mail.smtp.host";
@@ -63,22 +66,20 @@ public class EmailSender {
     private final String from;
     private final boolean useSSL;
 
-    private final LogService logService;
     private final boolean logOnly;
 
-    public EmailSender(final OSGIConfigPropertiesService configProperties, final LogService logService) {
+    public EmailSender(final OSGIConfigPropertiesService configProperties) {
         this(configProperties.getString(SERVER_NAME_PROP),
-                (configProperties.getString(SERVER_PORT_PROP) != null ? Integer.valueOf(configProperties.getString(SERVER_PORT_PROP)) : 25),
-                configProperties.getString(SMTP_USER_PROP),
-                configProperties.getString(SMTP_PWD_PROP),
-                configProperties.getString(SMTP_FROM_PROP),
-                (configProperties.getString(IS_SMTP_AUTH_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_SMTP_AUTH_PROP)) : false),
-                (configProperties.getString(IS_USE_SSL_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_USE_SSL_PROP)) : false),
-                logService,
-                (configProperties.getString(DEBUG_LOG_ONLY) != null ? Boolean.valueOf(configProperties.getString(DEBUG_LOG_ONLY)) : false));
+             (configProperties.getString(SERVER_PORT_PROP) != null ? Integer.valueOf(configProperties.getString(SERVER_PORT_PROP)) : 25),
+             configProperties.getString(SMTP_USER_PROP),
+             configProperties.getString(SMTP_PWD_PROP),
+             configProperties.getString(SMTP_FROM_PROP),
+             (configProperties.getString(IS_SMTP_AUTH_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_SMTP_AUTH_PROP)) : false),
+             (configProperties.getString(IS_USE_SSL_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_USE_SSL_PROP)) : false),
+             (configProperties.getString(DEBUG_LOG_ONLY) != null ? Boolean.valueOf(configProperties.getString(DEBUG_LOG_ONLY)) : false));
     }
 
-    public EmailSender(final String smtpServerName, final int useSmtpPort, final String smtpUserName, final String smtpUserPassword, final String from, final boolean useSmtpAuth, final boolean useSSL, final LogService logService, final boolean logOnly) {
+    public EmailSender(final String smtpServerName, final int useSmtpPort, final String smtpUserName, final String smtpUserPassword, final String from, final boolean useSmtpAuth, final boolean useSSL, final boolean logOnly) {
         this.useSmtpAuth = useSmtpAuth;
         this.useSmtpPort = useSmtpPort;
         this.smtpUserName = smtpUserName;
@@ -86,9 +87,7 @@ public class EmailSender {
         this.smtpServerName = smtpServerName;
         this.from = from;
         this.useSSL = useSSL;
-        this.logService = logService;
         this.logOnly = logOnly;
-
     }
 
     // Backward compatibility. If no configuration exists, then reuse Kill Bill email properties
@@ -104,29 +103,29 @@ public class EmailSender {
             smtp.setUseSSL(this.useSSL);
         }
 
-        logService.log(LogService.LOG_INFO, String.format("EmailSender configured with serverName = %s, serverPort = %d, from = %s, logOnly = %s",
-                                                          smtp.getHost(), smtp.getPort(), smtp.getFrom(), logOnly));
+        logger.info("EmailSender configured with serverName={}, serverPort={}, from={}, logOnly={}",
+                    smtp.getHost(), smtp.getPort(), smtp.getFrom(), logOnly);
 
         return smtp;
     }
 
     public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody, final SmtpProperties smtp) throws EmailException, EmailNotificationException {
-        logService.log(LogService.LOG_DEBUG, String.format("Sending email to = %s, cc= %s, subject = %s body = [%s]",
+        logger.debug("Sending email to={}, cc={}, subject={}, body=[{}]",
                                                            to,
                                                            JOINER_ON_COMMA.join(cc),
                                                            subject,
-                                                           htmlBody));
+                                                           htmlBody);
         final HtmlEmail email = new HtmlEmail();
         email.setHtmlMsg(htmlBody);
         sendEmail(to, cc, subject, email, precheckSmtp(smtp));
     }
 
     public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body, final SmtpProperties smtp) throws IOException, EmailException, EmailNotificationException {
-        logService.log(LogService.LOG_DEBUG, String.format("Sending email to = %s, cc= %s, subject = %s body = [%s]",
-                to,
-                JOINER_ON_COMMA.join(cc),
-                subject,
-                body));
+        logger.debug("Sending email to={}, cc={}, subject={}, body=[{}]",
+                     to,
+                     JOINER_ON_COMMA.join(cc),
+                     subject,
+                     body);
         final SimpleEmail email = new SimpleEmail();
         email.setCharset("utf-8");
         email.setMsg(body);
@@ -164,7 +163,7 @@ public class EmailSender {
 
         email.setSSL(smtp.isUseSSL());
 
-        logService.log(LogService.LOG_INFO, String.format("Sending email to %s, cc %s, subject %s", to, cc, subject));
+        logger.info("Sending email to={}, cc={}, subject={}", to, cc, subject);
         email.send();
     }
 

@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -22,16 +22,15 @@ import java.util.Hashtable;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 
-import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.osgi.api.OSGIPluginProperties;
 import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillEventDispatcher;
-import org.killbill.billing.payment.plugin.api.PaymentPluginApi;
 import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHandler;
 import org.killbill.billing.plugin.core.config.PluginEnvironmentConfig;
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
+import org.killbill.billing.plugin.notification.dao.ConfigurationDao;
 import org.killbill.billing.plugin.notification.http.EmailNotificationServlet;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
@@ -52,7 +51,7 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         final String region = PluginEnvironmentConfig.getRegion(configProperties.getProperties());
         
         // Register an event listener for plugin configuration (optional)
-        emailNotificationConfigurationHandler = new EmailNotificationConfigurationHandler(region, PLUGIN_NAME, killbillAPI, logService, dataSource);
+        emailNotificationConfigurationHandler = new EmailNotificationConfigurationHandler(region, PLUGIN_NAME, killbillAPI, dataSource);
         final EmailNotificationConfiguration globalConfiguration = emailNotificationConfigurationHandler.createConfigurable(configProperties.getProperties());
         emailNotificationConfigurationHandler.setDefaultConfigurable(globalConfiguration);
 
@@ -61,16 +60,17 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         invoiceFormatterTracker.open();
 
         // Register an event listener (optional)
-        emailNotificationListener = new EmailNotificationListener(clock, logService, killbillAPI, configProperties, dataSource, emailNotificationConfigurationHandler,
-                invoiceFormatterTracker);
+        emailNotificationListener = new EmailNotificationListener(clock, killbillAPI, configProperties, dataSource, emailNotificationConfigurationHandler, invoiceFormatterTracker);
+
+        final ConfigurationDao configurationDao = new ConfigurationDao(dataSource.getDataSource());
 
         // Register a servlet (optional)
         final PluginApp pluginApp = new PluginAppBuilder(PLUGIN_NAME,
                                                          killbillAPI,
-                                                         logService,
                                                          dataSource,
                                                          super.clock,
                                                          configProperties).withRouteClass(EmailNotificationServlet.class)
+                                                                          .withService(configurationDao)
                                                                           .build();
         final HttpServlet httpServlet = PluginApp.createServlet(pluginApp);
         registerServlet(context, httpServlet);

@@ -1,6 +1,6 @@
 /*
- * Copyright 2014-2017 Groupon, Inc
- * Copyright 2014-2017 The Billing Project, LLC
+ * Copyright 2014-2020 Groupon, Inc
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -24,20 +24,13 @@ import java.util.UUID;
 import org.joda.time.DateTime;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import org.killbill.billing.plugin.TestWithEmbeddedDBBase;
+import org.killbill.billing.plugin.notification.TestBase;
 import org.killbill.billing.plugin.notification.dao.gen.tables.pojos.EmailNotificationsConfiguration;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-
-public class TestConfigurationDao extends TestWithEmbeddedDBBase {
-
-    private ConfigurationDao dao;
-
-    @BeforeMethod(groups = "slow")
-    public void setUp() throws Exception {
-        dao = new ConfigurationDao(embeddedDB.getDataSource());
-    }
+public class TestConfigurationDao extends TestBase {
 
     @Test(groups = "slow")
     public void testUpdateEventTypePerAccount() throws Exception {

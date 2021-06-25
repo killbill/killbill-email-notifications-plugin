@@ -1,6 +1,6 @@
 /*
- * Copyright 2015-2016 Groupon, Inc
- * Copyright 2015-2016 The Billing Project, LLC
+ * Copyright 2015-2020 Groupon, Inc
+ * Copyright 2015-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -17,12 +17,16 @@
 
 package org.killbill.billing.plugin.notification.generator;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.anyMap;
-import static org.mockito.Mockito.eq;
-
-import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
@@ -55,6 +59,7 @@ import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.payment.api.TransactionStatus;
 import org.killbill.billing.payment.api.TransactionType;
 import org.killbill.billing.payment.plugin.api.PaymentTransactionInfoPlugin;
+import org.killbill.billing.plugin.notification.TestBase;
 import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
@@ -72,7 +77,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
-import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.ServiceTracker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,17 +85,13 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
+import com.google.common.collect.ImmutableList;
 
-public class TestTemplateRenderer {
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.anyMap;
+import static org.mockito.Mockito.eq;
+
+public class TestTemplateRenderer extends TestBase {
 
     private final Logger log = LoggerFactory.getLogger(TestTemplateRenderer.class);
 
@@ -115,31 +115,13 @@ public class TestTemplateRenderer {
     @BeforeClass(groups = "fast")
     @SuppressWarnings("rawtypes")
     public void beforeClass() throws Exception {
-
-        LogService logService = new LogService() {
-            @Override
-            public void log(int i, String s) {
-                log.info(s);
-            }
-            @Override
-            public void log(int i, String s, Throwable throwable) {
-                log.info(s, throwable);
-            }
-			@Override
-            public void log(ServiceReference serviceReference, int i, String s) {
-            }
-            @Override
-            public void log(ServiceReference serviceReference, int i, String s, Throwable throwable) {
-            }
-        };
-
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
-        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi(), logService);
-        renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi(), logService);
+        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi());
+        renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi());
     }
     
-    @BeforeMethod
-    public void beforeMethdo() {
+    @BeforeMethod(groups = "fast")
+    public void beforeMethod() {
     	MockitoAnnotations.initMocks(this);
     }
 
