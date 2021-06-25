@@ -2,7 +2,7 @@
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
  * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -32,6 +32,7 @@ import org.killbill.billing.plugin.core.config.PluginEnvironmentConfig;
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
+import org.killbill.billing.plugin.notification.dao.ConfigurationDao;
 import org.killbill.billing.plugin.notification.http.EmailNotificationServlet;
 import org.osgi.framework.BundleContext;
 import org.osgi.util.tracker.ServiceTracker;
@@ -50,7 +51,7 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         super.start(context);
 
         final String region = PluginEnvironmentConfig.getRegion(configProperties.getProperties());
-
+        
         // Register an event listener for plugin configuration (optional)
         emailNotificationConfigurationHandler = new EmailNotificationConfigurationHandler(region, PLUGIN_NAME, killbillAPI, dataSource);
         final EmailNotificationConfiguration globalConfiguration = emailNotificationConfigurationHandler.createConfigurable(configProperties.getProperties());
@@ -61,8 +62,9 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
         invoiceFormatterTracker.open();
 
         // Register an event listener (optional)
-        emailNotificationListener = new EmailNotificationListener(clock, killbillAPI, configProperties, dataSource, emailNotificationConfigurationHandler,
-                invoiceFormatterTracker);
+        emailNotificationListener = new EmailNotificationListener(clock, killbillAPI, configProperties, dataSource, emailNotificationConfigurationHandler, invoiceFormatterTracker);
+
+        final ConfigurationDao configurationDao = new ConfigurationDao(dataSource.getDataSource());
 
         // Register a servlet (optional)
         final PluginApp pluginApp = new PluginAppBuilder(PLUGIN_NAME,
@@ -70,6 +72,7 @@ public class EmailNotificationActivator extends KillbillActivatorBase {
                                                          dataSource,
                                                          super.clock,
                                                          configProperties).withRouteClass(EmailNotificationServlet.class)
+                                                                          .withService(configurationDao)
                                                                           .build();
         final HttpServlet httpServlet = PluginApp.createServlet(pluginApp);
         registerServlet(context, httpServlet);

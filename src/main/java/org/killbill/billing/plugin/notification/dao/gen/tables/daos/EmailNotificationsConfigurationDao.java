@@ -63,7 +63,7 @@ public class EmailNotificationsConfigurationDao extends DAOImpl<EmailNotificatio
      * {@inheritDoc}
      */
     @Override
-    protected ULong getId(EmailNotificationsConfiguration object) {
+    public ULong getId(EmailNotificationsConfiguration object) {
         return object.getRecordId();
     }
 

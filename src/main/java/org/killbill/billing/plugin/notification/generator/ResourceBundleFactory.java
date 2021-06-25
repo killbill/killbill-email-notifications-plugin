@@ -2,7 +2,7 @@
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
  * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -19,16 +19,6 @@
 
 package org.killbill.billing.plugin.notification.generator;
 
-import com.google.common.base.Charsets;
-import org.killbill.billing.plugin.notification.setup.EmailNotificationActivator;
-import org.killbill.billing.plugin.notification.util.LocaleUtils;
-import org.killbill.billing.tenant.api.TenantApiException;
-import org.killbill.billing.tenant.api.TenantKV;
-import org.killbill.billing.tenant.api.TenantUserApi;
-import org.killbill.billing.util.callcontext.TenantContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,11 +30,22 @@ import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
+import org.killbill.billing.plugin.notification.setup.EmailNotificationActivator;
+import org.killbill.billing.plugin.notification.util.LocaleUtils;
+import org.killbill.billing.tenant.api.TenantApiException;
+import org.killbill.billing.tenant.api.TenantKV;
+import org.killbill.billing.tenant.api.TenantUserApi;
+import org.killbill.billing.util.callcontext.TenantContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Charsets;
+
 public class ResourceBundleFactory {
 
-    private static final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
-
     private final String DEFAULT_TRANSLATION_PATH_PREFIX = "org/killbill/billing/plugin/notification/translations/";
+
+    private final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
 
     private final TenantUserApi tenantApi;
 
@@ -72,8 +73,6 @@ public class ResourceBundleFactory {
     public ResourceBundleFactory(final TenantUserApi tenantApi) {
         this.tenantApi = tenantApi;
     }
-
-
 
     public ResourceBundle createBundle(final Locale locale, final ResourceBundleType type, final TenantContext tenantContext) throws TenantApiException {
         if (tenantContext.getTenantId() == null) {

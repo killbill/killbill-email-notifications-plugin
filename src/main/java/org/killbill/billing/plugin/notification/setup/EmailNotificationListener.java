@@ -2,7 +2,7 @@
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
  * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import javax.annotation.Nullable;
-
 import org.apache.commons.mail.EmailException;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
@@ -42,7 +40,6 @@ import org.killbill.billing.invoice.api.DryRunType;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceApiException;
 import org.killbill.billing.invoice.api.InvoicePayment;
-import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.notification.plugin.api.ExtBusEvent;
 import org.killbill.billing.notification.plugin.api.ExtBusEventType;
 import org.killbill.billing.notification.plugin.api.NotificationPluginApiRetryException;
@@ -57,6 +54,7 @@ import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.payment.api.TransactionStatus;
 import org.killbill.billing.payment.api.TransactionType;
+import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.dao.ConfigurationDao;
 import org.killbill.billing.plugin.notification.dao.gen.tables.pojos.EmailNotificationsConfiguration;
 import org.killbill.billing.plugin.notification.email.EmailContent;
@@ -67,7 +65,6 @@ import org.killbill.billing.plugin.notification.generator.TemplateRenderer;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.util.callcontext.TenantContext;
-import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.osgi.util.tracker.ServiceTracker;
 import org.skife.config.TimeSpan;
 import org.slf4j.Logger;
@@ -103,7 +100,6 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             .add(ExtBusEventType.SUBSCRIPTION_CANCEL)
             .build();
 
-
     public EmailNotificationListener(final OSGIKillbillClock clock, final OSGIKillbillAPI killbillAPI, final OSGIConfigPropertiesService configProperties,
                                      OSGIKillbillDataSource dataSource, EmailNotificationConfigurationHandler emailNotificationConfigurationHandler,
                                      final ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker) throws SQLException {
@@ -137,7 +133,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             final Account account = osgiKillbillAPI.getAccountUserApi().getAccountById(killbillEvent.getAccountId(), new EmailNotificationContext(killbillEvent.getAccountId(), killbillEvent.getTenantId()));
             final String to = account.getEmail();
             if (to == null) {
-                logger.debug("Account {} does not have an email address configured, skip...", account.getId());
+                logger.info("Account {} does not have an email address configured, skip...", account.getId());
                 return;
             }
 
@@ -163,9 +159,8 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
                     break;
             }
 
-            logger.debug("Received event {} for object type = {}, id = {}",
+            logger.info("Received event {} for object type = {}, id = {}",
                          killbillEvent.getEventType(), killbillEvent.getObjectType(), killbillEvent.getObjectId());
-
         } catch (final EmailNotificationException e) {
             logger.warn(e.getMessage(), e);
         } catch (final AccountApiException e) {
@@ -206,12 +201,12 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         try {
             registeredEventType = this.dao.getEventTypePerAccount(kbAccountId,kbTenantId,eventType);
         } catch (SQLException e) {
-            logger.warn("Error retrieving email notification event registry: {}",e.getMessage());
+            logger.error("Error retrieving email notification event registry", e);
             return false;
         }
 
         if (registeredEventType == null) {
-           logger.warn("Registration of event {} is not available for account {}",eventType.toString(),kbAccountId);
+            logger.warn("Registration of event {} is not available for account {}", eventType, kbAccountId);
             return false;
         }
 
@@ -298,8 +293,8 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
             final EmailContent emailContent = templateRenderer.generateEmailForInvoiceCreation(account, invoice, context);
             sendEmail(account, emailContent, context);
         } else {
-           logger.warn("Fail to send email for account {}. Invoice not found for object {}",killbillEvent.getAccountId().toString(),
-                                                                 killbillEvent.getObjectId().toString());
+            logger.warn("Fail to send email for account {}. Invoice not found for object {}", killbillEvent.getAccountId().toString(),
+                        killbillEvent.getObjectId().toString());
         }
     }
 

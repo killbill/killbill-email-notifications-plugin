@@ -1,5 +1,6 @@
 0.7.0
-    Update to killbill-oss-parent 0.144.15
+    Support for custom formatters
+    Update to killbill-oss-parent 0.144.48
 
 0.6.1
     Support for HTML emails

@@ -1,8 +1,7 @@
 /*
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
- * Copyright 2020-2020 Equinix, Inc
- * Copyright 2014-2020 The Billing Project, LLC
+ * Copyright 2014-2021 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -19,7 +18,19 @@
 
 package org.killbill.billing.plugin.notification.generator;
 
-import com.google.common.base.Strings;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
+import javax.annotation.Nullable;
+
 import org.killbill.billing.account.api.AccountData;
 import org.killbill.billing.entitlement.api.Subscription;
 import org.killbill.billing.invoice.api.Invoice;
@@ -39,17 +50,7 @@ import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.osgi.util.tracker.ServiceTracker;
 
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import com.google.common.base.Strings;
 
 import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.TEMPLATE_INVALID;
 import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.TRANSLATION_INVALID;
@@ -116,7 +117,7 @@ public class TemplateRenderer {
             // look for a custom InvoiceFormatter via our factory service tracker, if available
             final InvoiceFormatterFactory formatterFactory = (invoiceFormatterTracker != null ? invoiceFormatterTracker.getService() : null);
             InvoiceFormatter formattedInvoice = (formatterFactory != null
-                    ? formatterFactory.createInvoiceFormatter(text, invoice, locale, context) : null);
+            		? formatterFactory.createInvoiceFormatter(text, invoice, locale, context) : null);
             if ( formattedInvoice == null ) {
                 formattedInvoice = new DefaultInvoiceFormatter(text, invoice, locale);
             }
@@ -202,7 +203,7 @@ public class TemplateRenderer {
      *
      * <p>If this service is not configured, or the tracker does not return a service via {@link ServiceTracker#getService()},
      * then a {@link DefaultInvoiceFormatter} instance will be used.</p>
-     *
+     * 
      * @param invoiceFormatterTracker the service tracker to use
      */
     public void setInvoiceFormatterTracker(ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker) {
