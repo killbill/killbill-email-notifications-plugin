@@ -43,6 +43,7 @@
         <check.fail-spotbugs>true</check.fail-spotbugs>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
         <osgi.export>org.killbill.billing.plugin.notification.api,org.killbill.billing.plugin.notification.generator.*</osgi.export>
+        <osgi.extra-import>com.sun.activation.registries</osgi.extra-import>
         <osgi.private>org.killbill.billing.plugin.notification.*</osgi.private>
     </properties>
     <dependencyManagement>
