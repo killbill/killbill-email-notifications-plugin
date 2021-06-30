@@ -58,7 +58,7 @@ import static org.killbill.billing.plugin.notification.exception.EmailNotificati
 public class TemplateRenderer {
 
     private static final String DEFAULT_TEMPLATE_PATH_PREFIX = "org/killbill/billing/plugin/notification/templates/";
-
+    
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;
     private final TenantUserApi tenantApi;
@@ -166,12 +166,12 @@ public class TemplateRenderer {
         // TODO Caching strategy
         final String templateTenantKey = LocaleUtils.localeString(locale, templateType.getTemplateKey());
         final List<String> result = tenantApi.getTenantValuesForKey(templateTenantKey, context);
-        if (result.size() == 1) {
-
-            return result.get(0);
+        if(result.size() > 0) {
+        	 return result.get(result.size()-1);
         }
-        return getDefaultTemplate(defaultTemplateName);
-
+        else {
+        	return getDefaultTemplate(defaultTemplateName);
+        }
     }
 
     private String getDefaultTemplate(final String templateName) {
