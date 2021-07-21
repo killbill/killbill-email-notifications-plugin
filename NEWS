@@ -1,3 +1,9 @@
+0.7.2
+    Add jakarta.activation to avoid extra OSGI import
+
+0.7.1
+    Use latest template if multiple entries are present
+
 0.7.0
     Support for custom formatters
     Update to killbill-oss-parent 0.144.48
