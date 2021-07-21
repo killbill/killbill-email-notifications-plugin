@@ -44,7 +44,6 @@
         <check.fail-spotbugs>true</check.fail-spotbugs>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
         <osgi.export>org.killbill.billing.plugin.notification.api,org.killbill.billing.plugin.notification.generator.*</osgi.export>
-        <osgi.extra-import>com.sun.activation.registries</osgi.extra-import>
         <osgi.private>org.killbill.billing.plugin.notification.*</osgi.private>
     </properties>
     <dependencyManagement>
@@ -68,6 +67,12 @@
         <dependency>
             <groupId>com.samskivert</groupId>
             <artifactId>jmustache</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.activation</groupId>
+            <artifactId>jakarta.activation</artifactId>
+            <version>2.0.1</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.sun.mail</groupId>
