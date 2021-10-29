@@ -32,6 +32,7 @@ public class EmailNotificationConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(EmailNotificationConfiguration.class);
 
     private static final String SMTP_PROPERTY_PREFIX = EmailNotificationActivator.PROPERTY_PREFIX + "smtp.";
+    private static final String CREDENTIALS_PROPERTY_PREFIX = EmailNotificationActivator.PROPERTY_PREFIX + "credentials.";
 
     // SMTP related properties
     private final SmtpProperties smtp;
@@ -40,6 +41,10 @@ public class EmailNotificationConfiguration {
     private final Set<String> eventTypes;
 
     private boolean sendHTMLEmail;
+    
+    private String adminUsername;
+    
+ 	private String adminPassword;
 
     public EmailNotificationConfiguration(){
         eventTypes = new HashSet<String>();
@@ -70,6 +75,9 @@ public class EmailNotificationConfiguration {
         this.smtp = new SmtpProperties(smtpServerName, smtpPort, parseBoolean(smtpAuth),
                                        smtpUserName, smtpPassword, parseBoolean(smtpUseSSL),defaultSender);
         this.sendHTMLEmail = parseBoolean(properties.getProperty(SMTP_PROPERTY_PREFIX + "sendHTMLEmail"));
+        
+        this.adminUsername = properties.getProperty(CREDENTIALS_PROPERTY_PREFIX + "username");
+        this.adminPassword = properties.getProperty(CREDENTIALS_PROPERTY_PREFIX + "password");
     }
 
     public final Set<String> getEventTypes() {
@@ -92,5 +100,14 @@ public class EmailNotificationConfiguration {
 
         return Boolean.parseBoolean(s);
     }
+    
+    public String getAdminUsername() {
+ 		return adminUsername;
+ 	}
+
+ 	public String getAdminPassword() {
+ 		return adminPassword;
+ 	}
+
 
 }
