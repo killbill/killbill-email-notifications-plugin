@@ -2,6 +2,7 @@ name: ci
 
 on:
   - push
+  - pull_request
 
 env:
   MAVEN_FLAGS: "-B --no-transfer-progress"
