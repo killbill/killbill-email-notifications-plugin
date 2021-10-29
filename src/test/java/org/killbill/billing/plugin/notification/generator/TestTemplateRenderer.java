@@ -353,8 +353,11 @@ public class TestTemplateRenderer extends TestBase {
         		"</body>\r\n" + 
         		"</html>";
         //System.err.println(email.getBody());
-//        Assert.assertEquals(email.getSubject(), "Payment Confirmation, Old Boy");
-//        Assert.assertEquals(email.getBody(), expectedBody);
+        //Disabled this test as different output is produced in Java 8 and Java 11.
+        /*
+        Assert.assertEquals(email.getSubject(), "Payment Confirmation, Old Boy");
+        Assert.assertEquals(email.getBody(), expectedBody);
+        */
     }
 
     @Test(groups = "fast")
