@@ -226,13 +226,20 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         final DateTime targetDateTime = now.plus(span.getMillis());
 
         final PluginCallContext callContext = new PluginCallContext(EmailNotificationActivator.PLUGIN_NAME, now, context.getAccountId(), context.getTenantId());
-        final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerDryRunInvoiceGeneration(account.getId(), new LocalDate(targetDateTime, account.getTimeZone()), NULL_DRY_RUN_ARGUMENTS, callContext);
-        if (invoice != null) {
-            final EmailContent emailContent = templateRenderer.generateEmailForUpComingInvoice(account, invoice, context);
-            sendEmail(account, emailContent, context);
+        try {
+        	final EmailNotificationConfiguration emailNotificationConfiguration = getConfiguration(context);
+        	osgiKillbillAPI.getSecurityApi().login(emailNotificationConfiguration.getAdminUsername(), emailNotificationConfiguration.getAdminPassword());
+        	final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerDryRunInvoiceGeneration(account.getId(), new LocalDate(targetDateTime, account.getTimeZone()), NULL_DRY_RUN_ARGUMENTS, callContext);
+        	if (invoice != null) {
+        		final EmailContent emailContent = templateRenderer.generateEmailForUpComingInvoice(account, invoice, context);
+        		sendEmail(account, emailContent, context);
+        	}
+        }
+        finally {
+        	osgiKillbillAPI.getSecurityApi().logout();
         }
     }
-
+    
     private void sendEmailForCancelledSubscription(final Account account, final ExtBusEvent killbillEvent, final TenantContext context) throws SubscriptionApiException, IOException, EmailException, TenantApiException, EmailNotificationException {
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.SUBSCRIPTION_CANCEL, String.format("Unexpected event %s", killbillEvent.getEventType()));
         final UUID subscriptionId = killbillEvent.getObjectId();
