@@ -21,6 +21,7 @@ package org.killbill.billing.plugin.notification.setup;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.UUID;
 
 import org.apache.commons.mail.EmailException;
@@ -229,7 +230,12 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         try {
         	final EmailNotificationConfiguration emailNotificationConfiguration = getConfiguration(context);
         	osgiKillbillAPI.getSecurityApi().login(emailNotificationConfiguration.getAdminUsername(), emailNotificationConfiguration.getAdminPassword());
-        	final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerDryRunInvoiceGeneration(account.getId(), new LocalDate(targetDateTime, account.getTimeZone()), NULL_DRY_RUN_ARGUMENTS, callContext);
+        	final Invoice invoice = osgiKillbillAPI.getInvoiceUserApi().triggerDryRunInvoiceGeneration(
+                    account.getId(),
+                    new LocalDate(targetDateTime, account.getTimeZone()),
+                    NULL_DRY_RUN_ARGUMENTS,
+                    Collections.emptyList(),
+                    callContext);
         	if (invoice != null) {
         		final EmailContent emailContent = templateRenderer.generateEmailForUpComingInvoice(account, invoice, context);
         		sendEmail(account, emailContent, context);
@@ -244,7 +250,7 @@ public class EmailNotificationListener implements OSGIKillbillEventDispatcher.OS
         Preconditions.checkArgument(killbillEvent.getEventType() == ExtBusEventType.SUBSCRIPTION_CANCEL, String.format("Unexpected event %s", killbillEvent.getEventType()));
         final UUID subscriptionId = killbillEvent.getObjectId();
 
-        final Subscription subscription = osgiKillbillAPI.getSubscriptionApi().getSubscriptionForEntitlementId(subscriptionId, context);
+        final Subscription subscription = osgiKillbillAPI.getSubscriptionApi().getSubscriptionForEntitlementId(subscriptionId, false, context);
         if (subscription != null) {
             final EmailContent emailContent = subscription.getState() == Entitlement.EntitlementState.CANCELLED ?
                     templateRenderer.generateEmailForSubscriptionCancellationEffective(account, subscription, context) :

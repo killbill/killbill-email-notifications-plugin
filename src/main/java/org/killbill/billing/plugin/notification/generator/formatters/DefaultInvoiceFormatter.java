@@ -197,6 +197,11 @@ public class DefaultInvoiceFormatter implements InvoiceFormatter {
     }
 
     @Override
+    public UUID getGroupId() {
+        return invoice.getGroupId();
+    }
+
+    @Override
     public LocalDate getInvoiceDate() {
         return invoice.getInvoiceDate();
     }
