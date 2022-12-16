@@ -26,7 +26,7 @@ Kill Bill compatibility
 |          0.5.y |            0.20.z |
 |          0.6.y |            0.22.z |
 |          0.7.y |            0.22.z |
-|          0.8.y |            0.23.z |
+|          0.8.y |            0.24.z |
 
 We've upgraded numerous dependencies in 0.7.x (required for Java 11 support).
 
