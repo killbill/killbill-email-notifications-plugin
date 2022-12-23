@@ -44,7 +44,6 @@
         <check.fail-dependency>false</check.fail-dependency>
         <check.fail-spotbugs>true</check.fail-spotbugs>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
-        <killbill-base-plugin.version>5.0.0-e413f42-SNAPSHOT</killbill-base-plugin.version>
         <osgi.export>org.killbill.billing.plugin.notification.api,org.killbill.billing.plugin.notification.generator.*</osgi.export>
         <osgi.private>org.killbill.billing.plugin.notification.*</osgi.private>
     </properties>
