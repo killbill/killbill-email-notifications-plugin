@@ -43,8 +43,8 @@
     <properties>
         <check.fail-dependency>false</check.fail-dependency>
         <check.fail-spotbugs>true</check.fail-spotbugs>
-        <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
+        <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <osgi.export>org.killbill.billing.plugin.notification.api,org.killbill.billing.plugin.notification.generator.*</osgi.export>
         <osgi.private>org.killbill.billing.plugin.notification.*</osgi.private>
     </properties>
