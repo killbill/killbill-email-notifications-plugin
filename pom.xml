@@ -41,6 +41,7 @@
         <url>https://github.com/killbill/killbill-email-notifications-plugin/issues</url>
     </issueManagement>
     <properties>
+        <aws-java-sdk-ses.version>1.12.618</aws-java-sdk-ses.version>
         <check.fail-dependency>false</check.fail-dependency>
         <check.fail-spotbugs>true</check.fail-spotbugs>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
@@ -49,6 +50,17 @@
         <osgi.private>org.killbill.billing.plugin.notification.*</osgi.private>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-ses</artifactId>
+            <version>${aws-java-sdk-ses.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
