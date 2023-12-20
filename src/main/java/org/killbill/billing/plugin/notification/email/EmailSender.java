@@ -69,7 +69,7 @@ public class EmailSender {
     private static final String EMAIL_NOTIFICATION_VIA_SES = "org.killbill.email.notification.via.ses";
     private static final String AWS_REGION = "org.killbill.aws.region";
 
-    private static final String DEFAULT_AWS_REGION = "us-east-1";
+    private static final String DEFAULT_AWS_REGION = "US_EAST_1";
 
     private final boolean useSmtpAuth;
     private final int useSmtpPort;
@@ -216,7 +216,7 @@ public class EmailSender {
             return;
         }
 
-        final Regions region = Regions.valueOf(awsRegion);
+        final Regions region = Regions.valueOf(awsRegion.toUpperCase());
 
         final AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard()
                                                                                      .withRegion(region)
