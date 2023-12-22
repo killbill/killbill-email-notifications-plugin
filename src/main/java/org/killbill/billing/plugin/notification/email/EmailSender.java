@@ -204,6 +204,8 @@ public class EmailSender {
         }
 
         email.setSSLOnConnect(smtp.isUseSSL());
+        email.setStartTLSEnabled(smtp.isUseSSL());
+        email.setStartTLSRequired(smtp.isUseSSL());
 
         logger.info("Sending email to={}, cc={}, subject={}", to, cc, subject);
         email.send();
@@ -216,7 +218,7 @@ public class EmailSender {
             return;
         }
 
-        final Regions region = Regions.valueOf(awsRegion.toUpperCase());
+        final Regions region = Regions.valueOf(awsRegion.replace("-", "_").toUpperCase());
 
         final AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard()
                                                                                      .withRegion(region)
