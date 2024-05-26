@@ -220,7 +220,7 @@ public class EmailSender {
     private void sendEmailViaSES(final List<String> to, final List<String> cc, final String subject,
                                  final String body, final SmtpProperties smtp) {
 
-        logger.info("Setting up AWS SES...");
+        logger.debug("Setting up AWS SES...");
         if (logOnly) {
             logger.info("Logging only mode is enabled. Skipping email sending.");
 
@@ -229,7 +229,7 @@ public class EmailSender {
 
         final Regions region = Regions.valueOf(awsRegion.replace("-", "_").toUpperCase());
 
-        logger.info("Creating AWS SES client...");
+        logger.debug("Creating AWS SES client...");
         final AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard()
                                                                                      .withRegion(region)
                                                                                      .build();
@@ -247,7 +247,7 @@ public class EmailSender {
 
         client.sendEmail(request);
 
-        logger.info("Email sent successfully");
+        logger.info("Email sent successfully to={}, cc={}, subject={}", to, cc, subject);
     }
 
     private void validateEmailFields(final List<String> to, final List<String> cc, final String subject,
