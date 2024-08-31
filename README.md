@@ -1,7 +1,9 @@
 # killbill-email-notifications-plugin
 ![Maven Central](https://img.shields.io/maven-central/v/org.kill-bill.billing.plugin.java/killbill-email-notifications-plugin?color=blue&label=Maven%20Central)
 
-The Kill Bill email notification plugin is a plugin that can be used to send emails when certain events occur. The easiest way to get started with the email notification plugin is to take a look at our [Email Notification Plugin Document](https://docs.killbill.io/latest/email-notification-plugin.html) which provides detailed instructions for installing, configuring and using the plugin.
+The Kill Bill email notification plugin is a plugin that can be used to send emails when certain events occur. It supports sending notifications via either SMTP or AWS SES.
+
+The easiest way to get started with the email notification plugin is to take a look at our [Email Notification Plugin Document](https://docs.killbill.io/latest/email-notification-plugin.html) which provides detailed instructions for installing, configuring and using the plugin.
 
 ## Requirements
 
@@ -98,5 +100,9 @@ public class Activator extends KillbillActivatorBase {
 In order to test the plugin, the easiest route is to start a local SMTP server. We are typically relying on the `namshi/smtp` docker image:
 
 ```
-
 Replace `<jar_file_path>` with the path of the email notification plugin jar file and `<path_to_install_plugin>` with the path where you want to install the plugin. This path should match the path specified by the `org.killbill.osgi.bundle.install.dir` property in the Kill Bill configuration file
+```
+
+## AWS SES
+
+Refer to the [plugin configuration](https://docs.killbill.io/latest/email-notification-plugin#plugin_configuration) section for instructions on setting up AWS SES.
