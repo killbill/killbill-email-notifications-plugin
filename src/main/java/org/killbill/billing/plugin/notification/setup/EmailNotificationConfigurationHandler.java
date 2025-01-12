@@ -60,7 +60,6 @@ public class EmailNotificationConfigurationHandler extends PluginTenantConfigura
 
     @Override
     protected EmailNotificationConfiguration createConfigurable(final Properties properties) {
-        logger.info("New properties for region {}: {}", region, properties);
         try {
             return new EmailNotificationConfiguration(properties);
         } catch (final Exception e) {
