@@ -67,9 +67,9 @@ public class EmailSender {
     private static final String DEBUG_LOG_ONLY = "org.killbill.billing.plugin.notification.email.logOnly";
 
     private static final String EMAIL_NOTIFICATION_VIA_SES = "org.killbill.email.notification.via.ses";
-    private static final String AWS_REGION = "org.killbill.aws.region";
+    private static final String AWS_REGION_PROP = "org.killbill.aws.region";
 
-    private static final String DEFAULT_AWS_REGION = "US_EAST_1";
+    private static final String DEFAULT_AWS_REGION = "us-east-1";
 
     private final boolean useSmtpAuth;
     private final int useSmtpPort;
@@ -94,7 +94,7 @@ public class EmailSender {
              (configProperties.getString(IS_SMTP_AUTH_PROP) != null && Boolean.parseBoolean(configProperties.getString(IS_SMTP_AUTH_PROP))),
              (configProperties.getString(IS_USE_SSL_PROP) != null && Boolean.parseBoolean(configProperties.getString(IS_USE_SSL_PROP))),
              (configProperties.getString(DEBUG_LOG_ONLY) != null && Boolean.parseBoolean(configProperties.getString(DEBUG_LOG_ONLY))),
-             (configProperties.getString(AWS_REGION) != null ? configProperties.getString(AWS_REGION) : DEFAULT_AWS_REGION),
+             (configProperties.getString(AWS_REGION_PROP) != null ? configProperties.getString(AWS_REGION_PROP) : DEFAULT_AWS_REGION),
              (configProperties.getString(EMAIL_NOTIFICATION_VIA_SES) != null && Boolean.parseBoolean(configProperties.getString(EMAIL_NOTIFICATION_VIA_SES))));
     }
 
@@ -112,6 +112,12 @@ public class EmailSender {
         this.logOnly = logOnly;
         this.awsRegion = awsRegion;
         this.sendEmailsViaSES = sendEmailsViaSES;
+
+        if (sendEmailsViaSES) {
+            logger.info("Emails will be sent using AWS SES");
+        } else {
+            logger.info("Emails will be sent using SMTP");
+        }
     }
 
     // Backward compatibility. If no configuration exists, then reuse Kill Bill email properties
@@ -214,12 +220,16 @@ public class EmailSender {
     private void sendEmailViaSES(final List<String> to, final List<String> cc, final String subject,
                                  final String body, final SmtpProperties smtp) {
 
+        logger.debug("Setting up AWS SES...");
         if (logOnly) {
+            logger.info("Logging only mode is enabled. Skipping email sending.");
+
             return;
         }
 
         final Regions region = Regions.valueOf(awsRegion.replace("-", "_").toUpperCase());
 
+        logger.debug("Creating AWS SES client...");
         final AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard()
                                                                                      .withRegion(region)
                                                                                      .build();
@@ -231,11 +241,13 @@ public class EmailSender {
                                                        .withText(new Content().withCharset("UTF-8").withData(body)))
                                      .withSubject(new Content()
                                                           .withCharset("UTF-8").withData(subject)))
-                .withSource(smtp.getFrom());
+                .withSource(this.from);
 
         logger.info("Sending email to={}, cc={}, subject={}", to, cc, subject);
 
         client.sendEmail(request);
+
+        logger.info("Email sent successfully to={}, cc={}, subject={}", to, cc, subject);
     }
 
     private void validateEmailFields(final List<String> to, final List<String> cc, final String subject,
