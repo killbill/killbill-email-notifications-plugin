@@ -2,6 +2,7 @@
  * Copyright 2010-2014 Ning, Inc.
  * Copyright 2014-2020 Groupon, Inc
  * Copyright 2014-2021 The Billing Project, LLC
+ * Copyright 2025 Tigase Inc.
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -40,6 +41,7 @@ import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.formatters.DefaultInvoiceFormatter;
+import org.killbill.billing.plugin.notification.generator.formatters.tygrys.TygrysInvoiceFormatter;
 import org.killbill.billing.plugin.notification.generator.formatters.PaymentFormatter;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateType;
@@ -113,16 +115,28 @@ public class TemplateRenderer {
         if (subscription != null) {
             data.put("subscription", subscription);
         }
+
         if (invoice != null) {
-            // look for a custom InvoiceFormatter via our factory service tracker, if available
+            // Look for a custom InvoiceFormatter
             final InvoiceFormatterFactory formatterFactory = (invoiceFormatterTracker != null ? invoiceFormatterTracker.getService() : null);
             InvoiceFormatter formattedInvoice = (formatterFactory != null
-            		? formatterFactory.createInvoiceFormatter(text, invoice, locale, context) : null);
-            if ( formattedInvoice == null ) {
+                    ? formatterFactory.createInvoiceFormatter(text, invoice, locale, context) : null);
+            if (formattedInvoice == null) {
                 formattedInvoice = new DefaultInvoiceFormatter(text, invoice, locale);
             }
+
+            // Add formatted invoice to the data model
             data.put("invoice", formattedInvoice);
+
+            // If the formatter is TygrysInvoiceFormatter, inject invoice attribute "subscriptionName"
+            if (formattedInvoice instanceof TygrysInvoiceFormatter) {
+                final String subscriptionName = ((TygrysInvoiceFormatter) formattedInvoice).getSubscriptionName();
+                if (subscriptionName != null) {
+                    data.put("subscriptionName", subscriptionName);
+                }
+            }
         }
+
         if (paymentTransaction != null) {
             final PaymentFormatter formattedPayment = new PaymentFormatter(paymentTransaction, locale);
             data.put("payment", formattedPayment);
