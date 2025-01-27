@@ -3,6 +3,7 @@
   ~ Copyright 2010-2014 Ning, Inc.
   ~ Copyright 2014-2020 Groupon, Inc
   ~ Copyright 2014-2021 The Billing Project, LLC
+  ~ Copyright 2025 The Tygrys Project, LLC
   ~
   ~ The Billing Project licenses this file to you under the Apache License, version 2.0
   ~ (the "License"); you may not use this file except in compliance with the
@@ -45,12 +46,308 @@
         <check.fail-dependency>false</check.fail-dependency>
         <check.fail-spotbugs>true</check.fail-spotbugs>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
+        <killbill.version>0.24.10</killbill.version>
         <commons-logging.version>1.3.0</commons-logging.version>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <osgi.export>org.killbill.billing.plugin.notification.api,org.killbill.billing.plugin.notification.generator.*</osgi.export>
         <osgi.private>org.killbill.billing.plugin.notification.*</osgi.private>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-multibindings</artifactId>
+                <version>4.2.3</version>
+                <!-- Use the latest version -->
+            </dependency>
+            <dependency>
+                <groupId>com.sun.mail</groupId>
+                <artifactId>javax.mail</artifactId>
+                <version>1.6.2</version>
+            </dependency>
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-common</artifactId>
+                <version>4.1.84.Final</version>
+            </dependency>
+            <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>2.12.5</version>
+                <!-- Choose the version required by your project -->
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>1.14.5</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>1.14.5</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.shiro</groupId>
+                <artifactId>shiro-core</artifactId>
+                <version>1.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.shiro</groupId>
+                <artifactId>shiro-guice</artifactId>
+                <version>1.12.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-invoice</artifactId>
+                <version>0.24.10</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.kill-bill.billing.plugin</groupId>
+                        <artifactId>killbill-plugin-api-invoice</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-concurrent</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-locker</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-utils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.billing</groupId>
+                        <artifactId>killbill-platform-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.billing</groupId>
+                        <artifactId>killbill-platform-base</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-config-magic</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-xmlloader</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.billing</groupId>
+                        <artifactId>killbill-platform-osgi</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.billing.plugin</groupId>
+                        <artifactId>killbill-plugin-api-notification</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.billing</groupId>
+                        <artifactId>killbill-platform-lifecycle</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-queue</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-metrics-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-clock</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-embeddeddb-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.commons</groupId>
+                        <artifactId>killbill-jdbi</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.kill-bill.billing</groupId>
+                        <artifactId>killbill-platform-osgi-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.weakref</groupId>
+                        <artifactId>jmxutils</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.shiro</groupId>
+                        <artifactId>shiro-guice</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>jcl-over-slf4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.shiro</groupId>
+                        <artifactId>shiro-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-platform-api</artifactId>
+                <version>0.41.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-platform-base</artifactId>
+                <version>0.41.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-platform-lifecycle</artifactId>
+                <version>0.41.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-platform-osgi</artifactId>
+                <version>0.41.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing</groupId>
+                <artifactId>killbill-platform-osgi-api</artifactId>
+                <version>0.41.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin</groupId>
+                <artifactId>killbill-plugin-api-invoice</artifactId>
+                <version>0.27.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.billing.plugin</groupId>
+                <artifactId>killbill-plugin-api-notification</artifactId>
+                <version>0.27.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-clock</artifactId>
+                <version>0.26.2</version>
+                <!-- Use the higher version -->
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-concurrent</artifactId>
+                <version>0.26.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-config-magic</artifactId>
+                <version>0.26.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-embeddeddb-common</artifactId>
+                <version>0.26.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-jdbi</artifactId>
+                <version>0.26.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-locker</artifactId>
+                <version>0.26.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-metrics-api</artifactId>
+                <version>0.26.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-queue</artifactId>
+                <version>0.26.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-utils</artifactId>
+                <version>0.26.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kill-bill.commons</groupId>
+                <artifactId>killbill-xmlloader</artifactId>
+                <version>0.26.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>4.9.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy-agent</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-junit-jupiter</artifactId>
+                <version>4.9.0</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.mockito</groupId>
+                        <artifactId>mockito-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy-agent</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.reactivestreams</groupId>
+                <artifactId>reactive-streams</artifactId>
+                <version>1.0.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>2.0.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.weakref</groupId>
+                <artifactId>jmxutils</artifactId>
+                <version>1.23</version>
+            </dependency>
+            <!-- Align snappy-java -->
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>1.1.10.4</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
+        <!-- Formatter factory -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-ses</artifactId>
@@ -67,8 +364,18 @@
             <artifactId>jsr305</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+            <!-- Latest stable version as of now -->
+        </dependency>
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
         </dependency>
         <dependency>
             <groupId>com.samskivert</groupId>
@@ -124,6 +431,12 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-email</artifactId>
             <version>1.5</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.sun.mail</groupId>
+                    <artifactId>javax.mail</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
@@ -137,10 +450,19 @@
         <dependency>
             <groupId>org.jooby</groupId>
             <artifactId>jooby</artifactId>
+            <version>1.6.9</version>
             <exclusions>
                 <exclusion>
                     <groupId>ch.qos.logback</groupId>
                     <artifactId>logback-classic</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.inject.extensions</groupId>
+                    <artifactId>guice-multibindings</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -155,10 +477,53 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter-api -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.mockito</groupId>
+                    <artifactId>mockito-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy-agent</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <dependency>
             <groupId>org.kill-bill.billing</groupId>
             <artifactId>killbill-api</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.billing</groupId>
+            <artifactId>killbill-client-java</artifactId>
+            <version>1.3.7</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.billing</groupId>
+            <artifactId>killbill-invoice</artifactId>
+            <version>0.24.10</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.kill-bill.billing</groupId>
@@ -174,6 +539,17 @@
             <groupId>org.kill-bill.billing</groupId>
             <artifactId>killbill-platform-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.billing.plugin</groupId>
+            <artifactId>killbill-plugin-api-currency</artifactId>
+            <version>0.8.5</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.billing.plugin</groupId>
+            <artifactId>killbill-plugin-api-invoice</artifactId>
+            <version>0.27.3</version>
         </dependency>
         <dependency>
             <groupId>org.kill-bill.billing.plugin</groupId>
@@ -235,9 +611,21 @@
             <artifactId>testing-mysql-server</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <version>4.9.0</version>
+            <scope>test</scope>
+        </dependency>
+        <!--
+        <dependency><groupId>org.mockito</groupId><artifactId>mockito-core</artifactId><scope>test</scope></dependency>
+  -->
+        <!-- https://mvnrepository.com/artifact/org.mockito/mockito-junit-jupiter -->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.15.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -248,6 +636,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
+            <version>2.0.9</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -256,13 +645,34 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+        <repository>
+            <id>killbill</id>
+            <url>https://oss.sonatype.org/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <id>killbill-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
     <build>
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+            </testResource>
+        </testResources>
         <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-enforcer-plugin</artifactId>
+                    <version>3.3.0</version>
                     <configuration>
+                        <skip>${enforcer.skip}</skip>
                         <rules>
                             <bannedDependencies>
                                 <includes>
@@ -270,8 +680,35 @@
                                     <include>com.google.guava:guava:[12,)</include>
                                 </includes>
                             </bannedDependencies>
+                            <RequireUpperBoundDeps>
+                                <excludes>
+                                    <exclude>org.apache.shiro:shiro-guice</exclude>
+                                    <exclude>org.xerial.snappy:snappy-java</exclude>
+                                </excludes>
+                            </RequireUpperBoundDeps>
                         </rules>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <id>enforce</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <dependencyConvergence/>
+                                    <RequireUpperBoundDeps>
+                                        <excludes>
+                                            <exclude>org.reactivestreams:reactive-streams</exclude>
+                                            <exclude>org.slf4j:slf4j-api</exclude>
+                                            <exclude>org.apache.shiro:shiro-core</exclude>
+                                            <exclude>io.netty:netty-common</exclude>
+                                        </excludes>
+                                    </RequireUpperBoundDeps>
+                                </rules>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -288,10 +725,23 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/*.properties</exclude>
+                                <exclude>**/*.iml</exclude>
                             </excludes>
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <version>0.15</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*.md</exclude>
+                        <exclude>**/*.json</exclude>
+                        <exclude>**/target/**</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
