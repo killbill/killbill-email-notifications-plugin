@@ -19,7 +19,6 @@
 
 package org.killbill.billing.plugin.notification.email;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.mail.internet.AddressException;
@@ -34,6 +33,14 @@ import org.killbill.billing.plugin.notification.exception.EmailNotificationExcep
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
+import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder;
+import com.amazonaws.services.simpleemail.model.Body;
+import com.amazonaws.services.simpleemail.model.Content;
+import com.amazonaws.services.simpleemail.model.Destination;
+import com.amazonaws.services.simpleemail.model.Message;
+import com.amazonaws.services.simpleemail.model.SendEmailRequest;
 import com.google.common.base.Joiner;
 
 import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.EMAIL_ADDRESS_INVALID;
@@ -57,8 +64,12 @@ public class EmailSender {
     private static final String SMTP_PWD_PROP = "org.killbill.mail.smtp.password";
     private static final String IS_USE_SSL_PROP = "org.killbill.mail.useSSL";
     private static final String SMTP_FROM_PROP = "org.killbill.mail.from";
-
     private static final String DEBUG_LOG_ONLY = "org.killbill.billing.plugin.notification.email.logOnly";
+
+    private static final String EMAIL_NOTIFICATION_VIA_SES = "org.killbill.email.notification.via.ses";
+    private static final String AWS_REGION_PROP = "org.killbill.aws.region";
+
+    private static final String DEFAULT_AWS_REGION = "us-east-1";
 
     private final boolean useSmtpAuth;
     private final int useSmtpPort;
@@ -70,18 +81,27 @@ public class EmailSender {
 
     private final boolean logOnly;
 
+    private final String awsRegion;
+
+    private final boolean sendEmailsViaSES;
+
     public EmailSender(final OSGIConfigPropertiesService configProperties) {
         this(configProperties.getString(SERVER_NAME_PROP),
              (configProperties.getString(SERVER_PORT_PROP) != null ? Integer.parseInt(configProperties.getString(SERVER_PORT_PROP)) : 25),
              configProperties.getString(SMTP_USER_PROP),
              configProperties.getString(SMTP_PWD_PROP),
              configProperties.getString(SMTP_FROM_PROP),
-             (configProperties.getString(IS_SMTP_AUTH_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_SMTP_AUTH_PROP)) : false),
-             (configProperties.getString(IS_USE_SSL_PROP) != null ? Boolean.valueOf(configProperties.getString(IS_USE_SSL_PROP)) : false),
-             (configProperties.getString(DEBUG_LOG_ONLY) != null ? Boolean.valueOf(configProperties.getString(DEBUG_LOG_ONLY)) : false));
+             (configProperties.getString(IS_SMTP_AUTH_PROP) != null && Boolean.parseBoolean(configProperties.getString(IS_SMTP_AUTH_PROP))),
+             (configProperties.getString(IS_USE_SSL_PROP) != null && Boolean.parseBoolean(configProperties.getString(IS_USE_SSL_PROP))),
+             (configProperties.getString(DEBUG_LOG_ONLY) != null && Boolean.parseBoolean(configProperties.getString(DEBUG_LOG_ONLY))),
+             (configProperties.getString(AWS_REGION_PROP) != null ? configProperties.getString(AWS_REGION_PROP) : DEFAULT_AWS_REGION),
+             (configProperties.getString(EMAIL_NOTIFICATION_VIA_SES) != null && Boolean.parseBoolean(configProperties.getString(EMAIL_NOTIFICATION_VIA_SES))));
     }
 
-    public EmailSender(final String smtpServerName, final int useSmtpPort, final String smtpUserName, final String smtpUserPassword, final String from, final boolean useSmtpAuth, final boolean useSSL, final boolean logOnly) {
+    public EmailSender(final String smtpServerName, final int useSmtpPort, final String smtpUserName,
+                       final String smtpUserPassword, final String from, final boolean useSmtpAuth,
+                       final boolean useSSL, final boolean logOnly, final String awsRegion,
+                       final boolean sendEmailsViaSES) {
         this.useSmtpAuth = useSmtpAuth;
         this.useSmtpPort = useSmtpPort;
         this.smtpUserName = smtpUserName;
@@ -90,12 +110,20 @@ public class EmailSender {
         this.from = from;
         this.useSSL = useSSL;
         this.logOnly = logOnly;
+        this.awsRegion = awsRegion;
+        this.sendEmailsViaSES = sendEmailsViaSES;
+
+        if (sendEmailsViaSES) {
+            logger.info("Emails will be sent using AWS SES");
+        } else {
+            logger.info("Emails will be sent using SMTP");
+        }
     }
 
     // Backward compatibility. If no configuration exists, then reuse Kill Bill email properties
-    public SmtpProperties precheckSmtp(SmtpProperties smtp) {
+    public SmtpProperties precheckSmtp(final SmtpProperties smtp) {
 
-        if (smtp.getHost() == null && smtpServerName != null){
+        if (smtp.getHost() == null && smtpServerName != null) {
             smtp.setHost(smtpServerName);
             smtp.setDefaultSender(this.from);
             smtp.setPort(this.useSmtpPort);
@@ -111,19 +139,28 @@ public class EmailSender {
         return smtp;
     }
 
-    public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject, final String htmlBody, final SmtpProperties smtp) throws EmailException, EmailNotificationException {
+    public void sendHTMLEmail(final List<String> to, final List<String> cc, final String subject,
+                              final String htmlBody, final SmtpProperties smtp)
+            throws EmailException, EmailNotificationException {
         logger.debug("Sending email to={}, cc={}, subject={}, body=[{}]",
-                                                           to,
-                                                           JOINER_ON_COMMA.join(cc),
-                                                           subject,
-                                                           htmlBody);
+                     to,
+                     JOINER_ON_COMMA.join(cc),
+                     subject,
+                     htmlBody);
         final HtmlEmail email = new HtmlEmail();
         email.setHtmlMsg(htmlBody);
         email.setCharset("utf-8");
-        sendEmail(to, cc, subject, email, precheckSmtp(smtp));
+
+        if (sendEmailsViaSES) {
+            sendEmailViaSES(to, cc, subject, htmlBody, smtp);
+        } else {
+            sendEmailViaSMTP(to, cc, subject, email, precheckSmtp(smtp));
+        }
     }
 
-    public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject, final String body, final SmtpProperties smtp) throws IOException, EmailException, EmailNotificationException {
+    public void sendPlainTextEmail(final List<String> to, final List<String> cc, final String subject,
+                                   final String body, final SmtpProperties smtp)
+            throws EmailException, EmailNotificationException {
         logger.debug("Sending email to={}, cc={}, subject={}, body=[{}]",
                      to,
                      JOINER_ON_COMMA.join(cc),
@@ -133,10 +170,17 @@ public class EmailSender {
         final SimpleEmail email = new SimpleEmail();
         email.setCharset("utf-8");
         email.setMsg(body);
-        sendEmail(to, cc, subject, email, precheckSmtp(smtp));
+
+        if (sendEmailsViaSES) {
+            sendEmailViaSES(to, cc, subject, body, smtp);
+        } else {
+            sendEmailViaSMTP(to, cc, subject, email, precheckSmtp(smtp));
+        }
     }
 
-    private void sendEmail(final List<String> to, final List<String> cc, final String subject, final Email email, final SmtpProperties smtp) throws EmailException, EmailNotificationException {
+    private void sendEmailViaSMTP(final List<String> to, final List<String> cc, final String subject,
+                                  final Email email, final SmtpProperties smtp)
+            throws EmailException, EmailNotificationException {
 
         if (logOnly) {
             return;
@@ -166,49 +210,86 @@ public class EmailSender {
         }
 
         email.setSSLOnConnect(smtp.isUseSSL());
+        email.setStartTLSEnabled(smtp.isUseSSL());
+        email.setStartTLSRequired(smtp.isUseSSL());
 
         logger.info("Sending email to={}, cc={}, subject={}", to, cc, subject);
         email.send();
     }
 
-    private void validateEmailFields(final List<String> to, final List<String> cc, final String subject, final SmtpProperties smtp) throws EmailNotificationException {
+    private void sendEmailViaSES(final List<String> to, final List<String> cc, final String subject,
+                                 final String body, final SmtpProperties smtp) {
 
-        if (to == null || to.size() == 0 || to.get(0).trim().isEmpty()){
+        logger.debug("Setting up AWS SES...");
+        if (logOnly) {
+            logger.info("Logging only mode is enabled. Skipping email sending.");
+
+            return;
+        }
+
+        final Regions region = Regions.valueOf(awsRegion.replace("-", "_").toUpperCase());
+
+        logger.debug("Creating AWS SES client...");
+        final AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard()
+                                                                                     .withRegion(region)
+                                                                                     .build();
+        final SendEmailRequest request = new SendEmailRequest()
+                .withDestination(new Destination().withToAddresses(to).withCcAddresses(cc))
+                .withMessage(new Message()
+                                     .withBody(new Body()
+                                                       .withHtml(new Content().withCharset("UTF-8").withData(body))
+                                                       .withText(new Content().withCharset("UTF-8").withData(body)))
+                                     .withSubject(new Content()
+                                                          .withCharset("UTF-8").withData(subject)))
+                .withSource(this.from);
+
+        logger.info("Sending email to={}, cc={}, subject={}", to, cc, subject);
+
+        client.sendEmail(request);
+
+        logger.info("Email sent successfully to={}, cc={}, subject={}", to, cc, subject);
+    }
+
+    private void validateEmailFields(final List<String> to, final List<String> cc, final String subject,
+                                     final SmtpProperties smtp) throws EmailNotificationException {
+
+        if (to == null || to.isEmpty() || to.get(0).trim().isEmpty()) {
             throw new EmailNotificationException(RECIPIENT_EMAIL_ADDRESS_REQUIRED);
         }
 
-        if (smtp.getFrom() == null || smtp.getFrom().trim().isEmpty()){
+        if (smtp.getFrom() == null || smtp.getFrom().trim().isEmpty()) {
             throw new EmailNotificationException(SENDER_EMAIL_ADDRESS_REQUIRED);
         }
 
-        if (smtp.isUseAuthentication() && ( (smtp.getUserName() == null || smtp.getUserName().trim().isEmpty()) || (smtp.getPassword() == null || smtp.getPassword().trim().isEmpty()) )){
+        if (smtp.isUseAuthentication() && ((smtp.getUserName() == null || smtp.getUserName().trim().isEmpty())
+                                           || (smtp.getPassword() == null || smtp.getPassword().trim().isEmpty()))) {
             throw new EmailNotificationException(SMTP_AUTHENTICATION_REQUIRED);
         }
 
-        if (subject == null || subject.trim().isEmpty()){
+        if (subject == null || subject.trim().isEmpty()) {
             throw new EmailNotificationException(SUBJECT_REQUIRED);
         }
 
-        if (smtp.getHost() == null || smtp.getHost().trim().isEmpty()){
+        if (smtp.getHost() == null || smtp.getHost().trim().isEmpty()) {
             throw new EmailNotificationException(SMTP_HOSTNAME_REQUIRED);
         }
 
         validateEmailAddress(smtp.getFrom());
 
-        for(String recipient: to){
+        for (final String recipient : to) {
             validateEmailAddress(recipient);
         }
 
-        for(String recipient: cc){
+        for (final String recipient : cc) {
             validateEmailAddress(recipient);
         }
     }
 
-    private void validateEmailAddress(String email) throws EmailNotificationException {
+    private void validateEmailAddress(final String email) throws EmailNotificationException {
         try {
-            InternetAddress emailAddr = new InternetAddress(email);
+            final InternetAddress emailAddr = new InternetAddress(email);
             emailAddr.validate();
-        } catch (AddressException ex) {
+        } catch (final AddressException ex) {
             throw new EmailNotificationException(ex, EMAIL_ADDRESS_INVALID, email);
         }
     }

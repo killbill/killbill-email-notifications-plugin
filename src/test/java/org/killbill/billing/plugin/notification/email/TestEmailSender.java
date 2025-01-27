@@ -35,9 +35,14 @@ public class TestEmailSender {
     private static final String TEST_SMTP_PWD = "bar";
     private static final String TEST_SMTP_FROM = "caramel@mou.com";
 
+    private static final String AWS_REGION = "us-east-1";
+
+
     @Test(enabled = false)
     public void foo() throws IOException, EmailException, EmailNotificationException {
-        EmailSender sender = new EmailSender(TEST_SMTP_SERVER_NAME, TEST_SMPT_SERVER_PORT, TEST_SMTP_USER, TEST_SMTP_PWD, TEST_SMTP_FROM, true, false, false);
+        final EmailSender sender = new EmailSender(TEST_SMTP_SERVER_NAME, TEST_SMPT_SERVER_PORT, TEST_SMTP_USER,
+                                                   TEST_SMTP_PWD, TEST_SMTP_FROM, true, false,
+                                                   false, AWS_REGION, false);
         final String to = "something_that_works@gmail.com";
         sender.sendPlainTextEmail(ImmutableList.of(to), ImmutableList.<String>of(), "coucou", "body", Mockito.mock(SmtpProperties.class));
     }

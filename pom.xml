@@ -22,11 +22,11 @@
     <parent>
         <groupId>org.kill-bill.billing</groupId>
         <artifactId>killbill-oss-parent</artifactId>
-        <version>0.146.6</version>
+        <version>0.146.35</version>
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>killbill-email-notifications-plugin</artifactId>
-    <version>0.8.1</version>
+    <version>0.8.2-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <name>Kill Bill OSGI Email Notifications Plugin</name>
     <description>Kill Bill Email Notifications Plugin</description>
@@ -34,7 +34,7 @@
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-email-notifications-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:killbill/killbill-email-notifications-plugin.git</developerConnection>
-        <tag>killbill-email-notifications-plugin-0.8.0</tag>
+        <tag>HEAD</tag>
         <url>http://github.com/killbill/killbill-email-notifications-plugin/tree/master</url>
     </scm>
     <issueManagement>
@@ -42,10 +42,12 @@
         <url>https://github.com/killbill/killbill-email-notifications-plugin/issues</url>
     </issueManagement>
     <properties>
+        <aws-java-sdk-ses.version>1.12.618</aws-java-sdk-ses.version>
         <check.fail-dependency>false</check.fail-dependency>
         <check.fail-spotbugs>true</check.fail-spotbugs>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
         <killbill.version>0.24.10</killbill.version>
+        <commons-logging.version>1.3.0</commons-logging.version>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <osgi.export>org.killbill.billing.plugin.notification.api,org.killbill.billing.plugin.notification.generator.*</osgi.export>
         <osgi.private>org.killbill.billing.plugin.notification.*</osgi.private>
@@ -347,6 +349,17 @@
             <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-ses</artifactId>
+            <version>${aws-java-sdk-ses.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>com.google.code.findbugs</groupId>
             <artifactId>jsr305</artifactId>
         </dependency>
@@ -385,6 +398,11 @@
                     <artifactId>activation</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>${commons-logging.version}</version>
         </dependency>
         <dependency>
             <groupId>io.zonky.test</groupId>
