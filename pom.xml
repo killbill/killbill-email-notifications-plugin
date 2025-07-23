@@ -281,6 +281,33 @@
                 <artifactId>maven-bundle-plugin</artifactId>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble-killbill-email-notification-plugin-classes</id>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <createSourcesJar>false</createSourcesJar>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>classes</shadedClassifierName>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact> <!-- This includes your own project -->
+                                    <includes>
+                                        <include>org/killbill/billing/plugin/notification/api/**</include>
+                                        <include>org/killbill/billing/plugin/notification/generator/formatters/**</include>
+                                    </includes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
                 <executions>
