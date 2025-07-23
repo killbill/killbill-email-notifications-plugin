@@ -21,11 +21,11 @@
     <parent>
         <groupId>org.kill-bill.billing</groupId>
         <artifactId>killbill-oss-parent</artifactId>
-        <version>0.146.35</version>
+        <version>0.146.63</version>
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>killbill-email-notifications-plugin</artifactId>
-    <version>0.8.2-SNAPSHOT</version>
+    <version>0.8.3-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <name>Kill Bill OSGI Email Notifications Plugin</name>
     <description>Kill Bill Email Notifications Plugin</description>
@@ -279,6 +279,33 @@
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble-killbill-email-notification-plugin-classes</id>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <phase>package</phase>
+                        <configuration>
+                            <createSourcesJar>false</createSourcesJar>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>classes</shadedClassifierName>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact> <!-- This includes your own project -->
+                                    <includes>
+                                        <include>org/killbill/billing/plugin/notification/api/**</include>
+                                        <include>org/killbill/billing/plugin/notification/generator/formatters/**</include>
+                                    </includes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.rat</groupId>
