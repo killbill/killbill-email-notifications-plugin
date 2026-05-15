@@ -19,7 +19,7 @@
 
 package org.killbill.billing.plugin.notification.email;
 
-public class SmtpProperties {
+public final class SmtpProperties {
 
     public static final int DEFAULT_SMTP_PORT = 25;
 

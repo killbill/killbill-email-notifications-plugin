@@ -43,9 +43,9 @@ import com.google.common.base.Charsets;
 
 public class ResourceBundleFactory {
 
-    private final String DEFAULT_TRANSLATION_PATH_PREFIX = "org/killbill/billing/plugin/notification/translations/";
+    private static final String DEFAULT_TRANSLATION_PATH_PREFIX = "org/killbill/billing/plugin/notification/translations/";
 
-    private final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
 
     private final TenantUserApi tenantApi;
 

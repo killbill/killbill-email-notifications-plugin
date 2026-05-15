@@ -24,7 +24,7 @@ package org.killbill.billing.plugin.notification.dao.gen.tables.daos;
 import java.sql.Timestamp;
 import java.util.List;
 
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 
 import org.jooq.Configuration;
 import org.jooq.impl.DAOImpl;

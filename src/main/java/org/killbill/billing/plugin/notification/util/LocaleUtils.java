@@ -19,7 +19,7 @@
 
 package org.killbill.billing.plugin.notification.util;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 import java.util.Locale;
 
 public class LocaleUtils {

@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import org.killbill.billing.account.api.AccountData;
 import org.killbill.billing.entitlement.api.Subscription;
