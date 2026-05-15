@@ -29,8 +29,10 @@ Kill Bill compatibility
 |          0.6.y |            0.22.z |
 |          0.7.y |            0.22.z |
 |          0.8.y |            0.24.z |
+|          0.9.y |            0.26.z |
 
-We've upgraded numerous dependencies in 0.7.x (required for Java 11 support).
+We've upgraded numerous dependencies in 0.7.x (required for Java 11 support). In 0.9.x, the Java EE `javax` namespace
+is replaced by the `jakarta` namespace.
 
 ## Build
 
