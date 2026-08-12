@@ -19,11 +19,18 @@
 
 package org.killbill.billing.plugin.notification.generator;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -48,11 +55,14 @@ import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
 import org.killbill.billing.plugin.notification.util.LocaleUtils;
+import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.tenant.api.boilerplate.TenantUserApiImp;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.killbill.billing.util.callcontext.boilerplate.TenantContextImp;
+import org.killbill.commons.utils.io.Resources;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -68,8 +78,9 @@ import org.testng.annotations.Test;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.anyMap;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.when;
 
-@Test(groups = "fast", enabled = false, description = "JDK dependent")
+@Test(groups = "fast")
 public class TestTemplateRenderer extends TestBase {
 
     private final Logger log = LoggerFactory.getLogger(TestTemplateRenderer.class);
@@ -91,13 +102,17 @@ public class TestTemplateRenderer extends TestBase {
 
     private TemplateRenderer renderer;
 
+    private TenantUserApi tenantUserApi;
+
     @BeforeMethod
-    public void beforeMethod() {
+    public void beforeMethod() throws TenantApiException {
         MockitoAnnotations.initMocks(this);
 
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
-        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(getMockTenantUserApi());
-        renderer = new TemplateRenderer(templateEngine, bundleFactory, getMockTenantUserApi());
+        tenantUserApi = Mockito.mock(TenantUserApi.class);
+        when(tenantUserApi.getTenantValuesForKey(Mockito.any(), Mockito.any())).thenReturn(Collections.emptyList());
+        final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(tenantUserApi);
+        renderer = new TemplateRenderer(templateEngine, bundleFactory, tenantUserApi);
     }
 
     public void testSuccessfulPaymentUSD() throws Exception {
@@ -110,107 +125,11 @@ public class TestTemplateRenderer extends TestBase {
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForSuccessfulPayment(account, invoice, tenantContext);
 
-        final String expectedBody = "<!doctype html>\n" +
-                                    "<html>\n" +
-                                    "<head>\n" +
-                                    "    <meta charset=\"utf-8\">\n" +
-                                    "    <title>Invoice</title>\n" +
-                                    "    <style>\n" +
-                                    "        /*!\n" +
-                                    "         * https://www.sparksuite.com/open-source/invoice.html\n" +
-                                    "         * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n" +
-                                    "         */\n" +
-                                    "        .invoice-box{max-width:800px;margin:auto;padding:30px;border:1px solid #eee;box-shadow:0 0 10px rgba(0,0,0,.15);font-size:16px;line-height:24px;font-family:'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif;color:#555}.invoice-box table{width:100%;line-height:inherit;text-align:left}.invoice-box table td{padding:5px;vertical-align:top}.invoice-box table tr td:nth-child(3){text-align:right}.invoice-box table tr.top table td{padding-bottom:20px}.invoice-box table tr.top table td.title{font-size:45px;line-height:45px;color:#333}.invoice-box table tr.information table td{padding-bottom:40px}.invoice-box table tr.heading td{background:#eee;border-bottom:1px solid #ddd;font-weight:700}.invoice-box table tr.details td{padding-bottom:20px}.invoice-box table tr.item td{border-bottom:1px solid #eee}.invoice-box table tr.item.last td{border-bottom:none}.invoice-box table tr.total td:nth-child(3){border-top:2px solid #eee;font-weight:700}@media only screen and (max-width:600px){.invoice-box table tr.top table td{width:100%;display:block;text-align:center}.invoice-box table tr.information table td{width:100%;display:block;text-align:center}}.rtl{direction:rtl;font-family:Tahoma,'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif}.rtl table{text-align:right}.rtl table tr td:nth-child(3){text-align:left}\n" +
-                                    "    </style>\n" +
-                                    "</head>\n" +
-                                    "<body>\n" +
-                                    "<div class=\"invoice-box\">\n" +
-                                    "    <table cellpadding=\"0\" cellspacing=\"0\">\n" +
-                                    "        <tr class=\"top\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td class=\"title\">\n" +
-                                    "                            <img src=\"https://raw.githubusercontent.com/killbill/killbill-docs/v3/userguide/assets/img/logo.png\" style=\"width:100%; max-width:300px;\">\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Invoice INV# 234<br>\n" +
-                                    "                            Invoice Date: Apr 6, 2015\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"information\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td>\n" +
-                                    "                            Acme Corporation<br>\n" +
-                                    "                            57 Academy Drive<br>\n" +
-                                    "                            Oak Creek, WI 53154<br>\n" +
-                                    "                            US\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Sylvie Dupond<br>\n" +
-                                    "                            SauvonsLaTerre<br>\n" +
-                                    "                            1234 Trumpet street<br>\n" +
-                                    "                            San Francisco, CA 94110<br>\n" +
-                                    "                            USA\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Thank you for your recent payment!</td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"details\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Service Period</td>\n" +
-                                    "            <td>Plan</td>\n" +
-                                    "            <td>Amount</td>\n" +
-                                    "        </tr>\n" +
-                                    "            <tr class=\"item last\">\n" +
-                                    "                <td>Apr 6, 2015</td>\n" +
-                                    "                <td>chocolate-monthly</td>\n" +
-                                    "                <td>$123.45</td>\n" +
-                                    "            </tr>\n" +
-                                    "            <tr class=\"item last\">\n" +
-                                    "                <td>Apr 6, 2015</td>\n" +
-                                    "                <td>chocolate-monthly</td>\n" +
-                                    "                <td>$7.55</td>\n" +
-                                    "            </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Total: $0.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Amount Paid: $131.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Balance: $0.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "    </table>\n" +
-                                    "</div>\n" +
-                                    "</body>\n" +
-                                    "</html>";
-        //System.err.println(email.getBody());
         Assert.assertEquals(email.getSubject(), "Your recent payment");
-        Assert.assertEquals(email.getBody(), expectedBody);
+        Assert.assertTrue(email.getBody().contains("Thank you for your recent payment!"));
+
+        Assert.assertTrue(email.getBody().contains("$123.45"));
+        Assert.assertFalse(email.getBody().contains("£123.45"));
     }
 
     public void testSuccessfulPaymentGBP() throws Exception {
@@ -223,108 +142,10 @@ public class TestTemplateRenderer extends TestBase {
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForSuccessfulPayment(account, invoice, tenantContext);
 
-        final String expectedBody = "<!doctype html>\n" +
-                                    "<html>\n" +
-                                    "<head>\n" +
-                                    "    <meta charset=\"utf-8\">\n" +
-                                    "    <title>Invoice</title>\n" +
-                                    "    <style>\n" +
-                                    "        /*!\n" +
-                                    "         * https://www.sparksuite.com/open-source/invoice.html\n" +
-                                    "         * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n" +
-                                    "         */\n" +
-                                    "        .invoice-box{max-width:800px;margin:auto;padding:30px;border:1px solid #eee;box-shadow:0 0 10px rgba(0,0,0,.15);font-size:16px;line-height:24px;font-family:'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif;color:#555}.invoice-box table{width:100%;line-height:inherit;text-align:left}.invoice-box table td{padding:5px;vertical-align:top}.invoice-box table tr td:nth-child(3){text-align:right}.invoice-box table tr.top table td{padding-bottom:20px}.invoice-box table tr.top table td.title{font-size:45px;line-height:45px;color:#333}.invoice-box table tr.information table td{padding-bottom:40px}.invoice-box table tr.heading td{background:#eee;border-bottom:1px solid #ddd;font-weight:700}.invoice-box table tr.details td{padding-bottom:20px}.invoice-box table tr.item td{border-bottom:1px solid #eee}.invoice-box table tr.item.last td{border-bottom:none}.invoice-box table tr.total td:nth-child(3){border-top:2px solid #eee;font-weight:700}@media only screen and (max-width:600px){.invoice-box table tr.top table td{width:100%;display:block;text-align:center}.invoice-box table tr.information table td{width:100%;display:block;text-align:center}}.rtl{direction:rtl;font-family:Tahoma,'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif}.rtl table{text-align:right}.rtl table tr td:nth-child(3){text-align:left}\n" +
-                                    "    </style>\n" +
-                                    "</head>\n" +
-                                    "<body>\n" +
-                                    "<div class=\"invoice-box\">\n" +
-                                    "    <table cellpadding=\"0\" cellspacing=\"0\">\n" +
-                                    "        <tr class=\"top\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td class=\"title\">\n" +
-                                    "                            <img src=\"https://raw.githubusercontent.com/killbill/killbill-docs/v3/userguide/assets/img/logo.png\" style=\"width:100%; max-width:300px;\">\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Invoice INV# 234<br>\n" +
-                                    "                            Invoice Date: 6 Apr 2015\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"information\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td>\n" +
-                                    "                            Acme Corporation<br>\n" +
-                                    "                            57 Academy Drive<br>\n" +
-                                    "                            Oak Creek, WI 53154<br>\n" +
-                                    "                            US\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Sylvie Dupond<br>\n" +
-                                    "                            SauvonsLaTerre<br>\n" +
-                                    "                            1234 Trumpet street<br>\n" +
-                                    "                            San Francisco, CA 94110<br>\n" +
-                                    "                            USA\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Thank you for your recent payment!</td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"details\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Service Period</td>\n" +
-                                    "            <td>Plan</td>\n" +
-                                    "            <td>Amount</td>\n" +
-                                    "        </tr>\n" +
-                                    "            <tr class=\"item last\">\n" +
-                                    "                <td>6 Apr 2015</td>\n" +
-                                    "                <td>chocolate-monthly</td>\n" +
-                                    "                <td>£123.45</td>\n" +
-                                    "            </tr>\n" +
-                                    "            <tr class=\"item last\">\n" +
-                                    "                <td>6 Apr 2015</td>\n" +
-                                    "                <td>chocolate-monthly</td>\n" +
-                                    "                <td>£7.55</td>\n" +
-                                    "            </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Total: £0.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Paid£131.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Balance: £0.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "    </table>\n" +
-                                    "</div>\n" +
-                                    "</body>\n" +
-                                    "</html>";
-        //System.err.println(email.getBody());
-
         Assert.assertEquals(email.getSubject(), "Payment Confirmation, Old Boy");
-        Assert.assertEquals(email.getBody(), expectedBody);
+        Assert.assertTrue(email.getBody().contains("Thank you for your recent payment!"));
+        Assert.assertTrue(email.getBody().contains("£123.45"));
+        Assert.assertFalse(email.getBody().contains("$123.45"));
     }
 
     public void testFailedPayment() throws Exception {
@@ -337,108 +158,8 @@ public class TestTemplateRenderer extends TestBase {
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForFailedPayment(account, invoice, tenantContext);
 
-        final String expectedBody = "<!doctype html>\n" +
-                                    "<html>\n" +
-                                    "<head>\n" +
-                                    "    <meta charset=\"utf-8\">\n" +
-                                    "    <title>Invoice</title>\n" +
-                                    "    <style>\n" +
-                                    "        /*!\n" +
-                                    "         * https://www.sparksuite.com/open-source/invoice.html\n" +
-                                    "         * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n" +
-                                    "         */\n" +
-                                    "        .invoice-box{max-width:800px;margin:auto;padding:30px;border:1px solid #eee;box-shadow:0 0 10px rgba(0,0,0,.15);font-size:16px;line-height:24px;font-family:'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif;color:#555}.invoice-box table{width:100%;line-height:inherit;text-align:left}.invoice-box table td{padding:5px;vertical-align:top}.invoice-box table tr td:nth-child(3){text-align:right}.invoice-box table tr.top table td{padding-bottom:20px}.invoice-box table tr.top table td.title{font-size:45px;line-height:45px;color:#333}.invoice-box table tr.information table td{padding-bottom:40px}.invoice-box table tr.heading td{background:#eee;border-bottom:1px solid #ddd;font-weight:700}.invoice-box table tr.details td{padding-bottom:20px}.invoice-box table tr.item td{border-bottom:1px solid #eee}.invoice-box table tr.item.last td{border-bottom:none}.invoice-box table tr.total td:nth-child(3){border-top:2px solid #eee;font-weight:700}@media only screen and (max-width:600px){.invoice-box table tr.top table td{width:100%;display:block;text-align:center}.invoice-box table tr.information table td{width:100%;display:block;text-align:center}}.rtl{direction:rtl;font-family:Tahoma,'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif}.rtl table{text-align:right}.rtl table tr td:nth-child(3){text-align:left}\n" +
-                                    "    </style>\n" +
-                                    "</head>\n" +
-                                    "<body>\n" +
-                                    "<div class=\"invoice-box\">\n" +
-                                    "    <table cellpadding=\"0\" cellspacing=\"0\">\n" +
-                                    "        <tr class=\"top\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td class=\"title\">\n" +
-                                    "                            <img src=\"https://raw.githubusercontent.com/killbill/killbill-docs/v3/userguide/assets/img/logo.png\" style=\"width:100%; max-width:300px;\">\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Invoice INV# 234<br>\n" +
-                                    "                            Invoice Date: Apr 6, 2015\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"information\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td>\n" +
-                                    "                            Acme Corporation<br>\n" +
-                                    "                            57 Academy Drive<br>\n" +
-                                    "                            Oak Creek, WI 53154<br>\n" +
-                                    "                            US\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Sylvie Dupond<br>\n" +
-                                    "                            SauvonsLaTerre<br>\n" +
-                                    "                            1234 Trumpet street<br>\n" +
-                                    "                            San Francisco, CA 94110<br>\n" +
-                                    "                            USA\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>We were not able to process your payment!</td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"details\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Service Period</td>\n" +
-                                    "            <td>Plan</td>\n" +
-                                    "            <td>Amount</td>\n" +
-                                    "        </tr>\n" +
-                                    "            <tr class=\"item last\">\n" +
-                                    "                <td>Apr 6, 2015</td>\n" +
-                                    "                <td>chocolate-monthly</td>\n" +
-                                    "                <td>$123.45</td>\n" +
-                                    "            </tr>\n" +
-                                    "            <tr class=\"item last\">\n" +
-                                    "                <td>Apr 6, 2015</td>\n" +
-                                    "                <td>chocolate-monthly</td>\n" +
-                                    "                <td>$7.55</td>\n" +
-                                    "            </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Total: $0.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Amount Paid: $131.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Balance: $0.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "    </table>\n" +
-                                    "</div>\n" +
-                                    "</body>\n" +
-                                    "</html>";
-
-        //System.err.println(email.getBody());
         Assert.assertEquals(email.getSubject(), "Your recent payment");
-        Assert.assertEquals(email.getBody(), expectedBody);
+        Assert.assertTrue(email.getBody().contains("We were not able to process your payment!"));
     }
 
     public void testPaymentRefund() throws Exception {
@@ -448,83 +169,8 @@ public class TestTemplateRenderer extends TestBase {
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForPaymentRefund(account, paymentTransaction, tenantContext);
 
-        final String expectedBody = "<!doctype html>\n" +
-                                    "<html>\n" +
-                                    "<head>\n" +
-                                    "    <meta charset=\"utf-8\">\n" +
-                                    "    <title>Payment</title>\n" +
-                                    "    <style>\n" +
-                                    "        /*!\n" +
-                                    "         * https://www.sparksuite.com/open-source/invoice.html\n" +
-                                    "         * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n" +
-                                    "         */\n" +
-                                    "        .invoice-box{max-width:800px;margin:auto;padding:30px;border:1px solid #eee;box-shadow:0 0 10px rgba(0,0,0,.15);font-size:16px;line-height:24px;font-family:'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif;color:#555}.invoice-box table{width:100%;line-height:inherit;text-align:left}.invoice-box table td{padding:5px;vertical-align:top}.invoice-box table tr td:nth-child(3){text-align:right}.invoice-box table tr.top table td{padding-bottom:20px}.invoice-box table tr.top table td.title{font-size:45px;line-height:45px;color:#333}.invoice-box table tr.information table td{padding-bottom:40px}.invoice-box table tr.heading td{background:#eee;border-bottom:1px solid #ddd;font-weight:700}.invoice-box table tr.details td{padding-bottom:20px}.invoice-box table tr.item td{border-bottom:1px solid #eee}.invoice-box table tr.item.last td{border-bottom:none}.invoice-box table tr.total td:nth-child(3){border-top:2px solid #eee;font-weight:700}@media only screen and (max-width:600px){.invoice-box table tr.top table td{width:100%;display:block;text-align:center}.invoice-box table tr.information table td{width:100%;display:block;text-align:center}}.rtl{direction:rtl;font-family:Tahoma,'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif}.rtl table{text-align:right}.rtl table tr td:nth-child(3){text-align:left}\n" +
-                                    "    </style>\n" +
-                                    "</head>\n" +
-                                    "<body>\n" +
-                                    "<div class=\"invoice-box\">\n" +
-                                    "    <table cellpadding=\"0\" cellspacing=\"0\">\n" +
-                                    "        <tr class=\"top\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td class=\"title\">\n" +
-                                    "                            <img src=\"https://raw.githubusercontent.com/killbill/killbill-docs/v3/userguide/assets/img/logo.png\" style=\"width:100%; max-width:300px;\">\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Payment <br>\n" +
-                                    "                            Payment Date: Jun 1, 2022\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"information\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td>\n" +
-                                    "                            Acme Corporation<br>\n" +
-                                    "                            57 Academy Drive<br>\n" +
-                                    "                            Oak Creek, WI 53154<br>\n" +
-                                    "                            US\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Sylvie Dupond<br>\n" +
-                                    "                            SauvonsLaTerre<br>\n" +
-                                    "                            1234 Trumpet street<br>\n" +
-                                    "                            San Francisco, CA 94110<br>\n" +
-                                    "                            USA\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Your refund has been processed!</td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"details\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Total: $20.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "    </table>\n" +
-                                    "</div>\n" +
-                                    "</body>\n" +
-                                    "</html>";
-
-        // System.err.println(email.getBody());
         Assert.assertEquals(email.getSubject(), "Refund Receipt");
-        Assert.assertEquals(email.getBody(), expectedBody);
+        Assert.assertTrue(email.getBody().contains("Your refund has been processed!"));
     }
 
     public void testSubscriptionCancellationRequested() throws Exception {
@@ -534,83 +180,8 @@ public class TestTemplateRenderer extends TestBase {
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForSubscriptionCancellationRequested(account, cancelledSubscription, tenantContext);
 
-        final String expectedBody = "<!doctype html>\n" +
-                                    "<html>\n" +
-                                    "<head>\n" +
-                                    "    <meta charset=\"utf-8\">\n" +
-                                    "    <title>Subscription</title>\n" +
-                                    "    <style>\n" +
-                                    "        /*!\n" +
-                                    "         * https://www.sparksuite.com/open-source/invoice.html\n" +
-                                    "         * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n" +
-                                    "         */\n" +
-                                    "        .invoice-box{max-width:800px;margin:auto;padding:30px;border:1px solid #eee;box-shadow:0 0 10px rgba(0,0,0,.15);font-size:16px;line-height:24px;font-family:'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif;color:#555}.invoice-box table{width:100%;line-height:inherit;text-align:left}.invoice-box table td{padding:5px;vertical-align:top}.invoice-box table tr td:nth-child(3){text-align:right}.invoice-box table tr.top table td{padding-bottom:20px}.invoice-box table tr.top table td.title{font-size:45px;line-height:45px;color:#333}.invoice-box table tr.information table td{padding-bottom:40px}.invoice-box table tr.heading td{background:#eee;border-bottom:1px solid #ddd;font-weight:700}.invoice-box table tr.details td{padding-bottom:20px}.invoice-box table tr.item td{border-bottom:1px solid #eee}.invoice-box table tr.item.last td{border-bottom:none}.invoice-box table tr.total td:nth-child(3){border-top:2px solid #eee;font-weight:700}@media only screen and (max-width:600px){.invoice-box table tr.top table td{width:100%;display:block;text-align:center}.invoice-box table tr.information table td{width:100%;display:block;text-align:center}}.rtl{direction:rtl;font-family:Tahoma,'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif}.rtl table{text-align:right}.rtl table tr td:nth-child(3){text-align:left}\n" +
-                                    "    </style>\n" +
-                                    "</head>\n" +
-                                    "<body>\n" +
-                                    "<div class=\"invoice-box\">\n" +
-                                    "    <table cellpadding=\"0\" cellspacing=\"0\">\n" +
-                                    "        <tr class=\"top\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td class=\"title\">\n" +
-                                    "                            <img src=\"https://raw.githubusercontent.com/killbill/killbill-docs/v3/userguide/assets/img/logo.png\" style=\"width:100%; max-width:300px;\">\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Subscription <br>\n" +
-                                    "                            End Date: 2015-04-06\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"information\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td>\n" +
-                                    "                            Acme Corporation<br>\n" +
-                                    "                            57 Academy Drive<br>\n" +
-                                    "                            Oak Creek, WI 53154<br>\n" +
-                                    "                            US\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Sylvie Dupond<br>\n" +
-                                    "                            SauvonsLaTerre<br>\n" +
-                                    "                            1234 Trumpet street<br>\n" +
-                                    "                            San Francisco, CA 94110<br>\n" +
-                                    "                            USA\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>The following subscription will be cancelled</td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"details\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Plan: myPlanName</td>\n" +
-                                    "        </tr>\n" +
-                                    "    </table>\n" +
-                                    "</div>\n" +
-                                    "</body>\n" +
-                                    "</html>";
-
-        //System.err.println(email.getBody());
         Assert.assertEquals(email.getSubject(), "Your subscription will be cancelled");
-        Assert.assertEquals(email.getBody(), expectedBody);
+        Assert.assertTrue(email.getBody().contains("The following subscription will be cancelled<"));
     }
 
     public void testSubscriptionCancellationEffective() throws Exception {
@@ -620,83 +191,8 @@ public class TestTemplateRenderer extends TestBase {
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForSubscriptionCancellationEffective(account, cancelledSubscription, tenantContext);
 
-        final String expectedBody = "<!doctype html>\n" +
-                                    "<html>\n" +
-                                    "<head>\n" +
-                                    "    <meta charset=\"utf-8\">\n" +
-                                    "    <title>Subscription</title>\n" +
-                                    "    <style>\n" +
-                                    "        /*!\n" +
-                                    "         * https://www.sparksuite.com/open-source/invoice.html\n" +
-                                    "         * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n" +
-                                    "         */\n" +
-                                    "        .invoice-box{max-width:800px;margin:auto;padding:30px;border:1px solid #eee;box-shadow:0 0 10px rgba(0,0,0,.15);font-size:16px;line-height:24px;font-family:'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif;color:#555}.invoice-box table{width:100%;line-height:inherit;text-align:left}.invoice-box table td{padding:5px;vertical-align:top}.invoice-box table tr td:nth-child(3){text-align:right}.invoice-box table tr.top table td{padding-bottom:20px}.invoice-box table tr.top table td.title{font-size:45px;line-height:45px;color:#333}.invoice-box table tr.information table td{padding-bottom:40px}.invoice-box table tr.heading td{background:#eee;border-bottom:1px solid #ddd;font-weight:700}.invoice-box table tr.details td{padding-bottom:20px}.invoice-box table tr.item td{border-bottom:1px solid #eee}.invoice-box table tr.item.last td{border-bottom:none}.invoice-box table tr.total td:nth-child(3){border-top:2px solid #eee;font-weight:700}@media only screen and (max-width:600px){.invoice-box table tr.top table td{width:100%;display:block;text-align:center}.invoice-box table tr.information table td{width:100%;display:block;text-align:center}}.rtl{direction:rtl;font-family:Tahoma,'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif}.rtl table{text-align:right}.rtl table tr td:nth-child(3){text-align:left}\n" +
-                                    "    </style>\n" +
-                                    "</head>\n" +
-                                    "<body>\n" +
-                                    "<div class=\"invoice-box\">\n" +
-                                    "    <table cellpadding=\"0\" cellspacing=\"0\">\n" +
-                                    "        <tr class=\"top\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td class=\"title\">\n" +
-                                    "                            <img src=\"https://raw.githubusercontent.com/killbill/killbill-docs/v3/userguide/assets/img/logo.png\" style=\"width:100%; max-width:300px;\">\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Subscription <br>\n" +
-                                    "                            End Date: 2015-04-06\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"information\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td>\n" +
-                                    "                            Acme Corporation<br>\n" +
-                                    "                            57 Academy Drive<br>\n" +
-                                    "                            Oak Creek, WI 53154<br>\n" +
-                                    "                            US\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Sylvie Dupond<br>\n" +
-                                    "                            SauvonsLaTerre<br>\n" +
-                                    "                            1234 Trumpet street<br>\n" +
-                                    "                            San Francisco, CA 94110<br>\n" +
-                                    "                            USA\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>The following subscription has been cancelled</td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"details\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Plan: myPlanName</td>\n" +
-                                    "        </tr>\n" +
-                                    "    </table>\n" +
-                                    "</div>\n" +
-                                    "</body>\n" +
-                                    "</html>";
-
-        //System.err.println(email.getBody());
         Assert.assertEquals(email.getSubject(), "Your subscription has been cancelled");
-        Assert.assertEquals(email.getBody(), expectedBody);
+        Assert.assertTrue(email.getBody().contains("The following subscription has been cancelled"));
     }
 
     public void testUpComingInvoice() throws Exception {
@@ -709,108 +205,35 @@ public class TestTemplateRenderer extends TestBase {
         final TenantContext tenantContext = createTenantContext();
         final EmailContent email = renderer.generateEmailForUpComingInvoice(account, invoice, tenantContext);
 
-        final String expectedBody = "<!doctype html>\n" +
-                                    "<html>\n" +
-                                    "<head>\n" +
-                                    "    <meta charset=\"utf-8\">\n" +
-                                    "    <title>Invoice</title>\n" +
-                                    "    <style>\n" +
-                                    "        /*!\n" +
-                                    "         * https://www.sparksuite.com/open-source/invoice.html\n" +
-                                    "         * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n" +
-                                    "         */\n" +
-                                    "        .invoice-box{max-width:800px;margin:auto;padding:30px;border:1px solid #eee;box-shadow:0 0 10px rgba(0,0,0,.15);font-size:16px;line-height:24px;font-family:'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif;color:#555}.invoice-box table{width:100%;line-height:inherit;text-align:left}.invoice-box table td{padding:5px;vertical-align:top}.invoice-box table tr td:nth-child(3){text-align:right}.invoice-box table tr.top table td{padding-bottom:20px}.invoice-box table tr.top table td.title{font-size:45px;line-height:45px;color:#333}.invoice-box table tr.information table td{padding-bottom:40px}.invoice-box table tr.heading td{background:#eee;border-bottom:1px solid #ddd;font-weight:700}.invoice-box table tr.details td{padding-bottom:20px}.invoice-box table tr.item td{border-bottom:1px solid #eee}.invoice-box table tr.item.last td{border-bottom:none}.invoice-box table tr.total td:nth-child(3){border-top:2px solid #eee;font-weight:700}@media only screen and (max-width:600px){.invoice-box table tr.top table td{width:100%;display:block;text-align:center}.invoice-box table tr.information table td{width:100%;display:block;text-align:center}}.rtl{direction:rtl;font-family:Tahoma,'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif}.rtl table{text-align:right}.rtl table tr td:nth-child(3){text-align:left}\n" +
-                                    "    </style>\n" +
-                                    "</head>\n" +
-                                    "<body>\n" +
-                                    "<div class=\"invoice-box\">\n" +
-                                    "    <table cellpadding=\"0\" cellspacing=\"0\">\n" +
-                                    "        <tr class=\"top\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td class=\"title\">\n" +
-                                    "                            <img src=\"https://raw.githubusercontent.com/killbill/killbill-docs/v3/userguide/assets/img/logo.png\" style=\"width:100%; max-width:300px;\">\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Invoice INV# 234<br>\n" +
-                                    "                            Invoice Date: Apr 6, 2015\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"information\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td>\n" +
-                                    "                            Acme Corporation<br>\n" +
-                                    "                            57 Academy Drive<br>\n" +
-                                    "                            Oak Creek, WI 53154<br>\n" +
-                                    "                            US\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Sylvie Dupond<br>\n" +
-                                    "                            SauvonsLaTerre<br>\n" +
-                                    "                            1234 Trumpet street<br>\n" +
-                                    "                            San Francisco, CA 94110<br>\n" +
-                                    "                            USA\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Here&#39;s a preview of your upcoming invoice</td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"details\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Service Period</td>\n" +
-                                    "            <td>Plan</td>\n" +
-                                    "            <td>Amount</td>\n" +
-                                    "        </tr>\n" +
-                                    "            <tr class=\"item last\">\n" +
-                                    "                <td>Apr 6, 2015</td>\n" +
-                                    "                <td>chocolate-monthly</td>\n" +
-                                    "                <td>$123.45</td>\n" +
-                                    "            </tr>\n" +
-                                    "            <tr class=\"item last\">\n" +
-                                    "                <td>Apr 6, 2015</td>\n" +
-                                    "                <td>chocolate-monthly</td>\n" +
-                                    "                <td>$7.55</td>\n" +
-                                    "            </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Total: $0.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Amount Paid: $131.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Balance: $0.00</td>\n" +
-                                    "        </tr>\n" +
-                                    "    </table>\n" +
-                                    "</div>\n" +
-                                    "</body>\n" +
-                                    "</html>";
-        //System.err.println(email.getBody());
         Assert.assertEquals(email.getSubject(), "Your upcoming invoice");
+        Assert.assertTrue(email.getBody().contains("Here&#39;s a preview of your upcoming invoice"));
+    }
 
-        Assert.assertEquals(email.getBody(), expectedBody);
+    public void testInvoiceCreationNewTemplateAndNewTenantVariables() throws Exception {
+        final AccountData account = createAccount();
+        final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), account.getCurrency(), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.5500"), account.getCurrency(), "chocolate-monthly"));
+        final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
+
+        final UUID tenantId = UUID.randomUUID();
+        final TenantContext tenantContext = new TenantContextImp.Builder<>().withTenantId(tenantId).build();
+        final String templateWithNewFields = getResourceBodyString("org/killbill/billing/plugin/notification/templates/InvoiceCreation-new-fields.mustache");
+        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("killbill-email-notifications:INVOICE_CREATION_en_US"), Mockito.any())).thenReturn(List.of(templateWithNewFields));
+        final String companyInfo = getResourceBodyString("org/killbill/billing/plugin/notification/templates/companyInfo.json");
+        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("COMPANY_INFO"), Mockito.any())).thenReturn(List.of(companyInfo));
+        final String logoInfo = getResourceBodyString("org/killbill/billing/plugin/notification/templates/logoInfo.json");
+        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("EMAIL_TEMPLATE_LOGO_INFO"), Mockito.any())).thenReturn(List.of(logoInfo));
+        final String brandInfo = getResourceBodyString("org/killbill/billing/plugin/notification/templates/brandInfo.json");
+        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("EMAIL_TEMPLATE_BRAND_INFO"), Mockito.any())).thenReturn(List.of(brandInfo));
+
+        final EmailContent email = renderer.generateEmailForInvoiceCreation(account, invoice, tenantContext);
+
+        Assert.assertEquals(email.getSubject(), "Your recent invoice");
+        Assert.assertTrue(email.getBody().contains("Thank you for your prompt payment!"));
+        Assert.assertTrue(email.getBody().contains("CloudSprout"));
+        Assert.assertTrue(email.getBody().contains("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDA"));
+        Assert.assertTrue(email.getBody().contains("--text-color: red"));
     }
 
     public void testCreateInvoiceWithCustomFormatterFactory() throws Exception {
@@ -844,97 +267,8 @@ public class TestTemplateRenderer extends TestBase {
         final EmailContent email = renderer.generateEmailForInvoiceCreation(account, invoice, tenantContext);
 
         // THEN
-        final String expectedBody = "<!doctype html>\n" +
-                                    "<html>\n" +
-                                    "<head>\n" +
-                                    "    <meta charset=\"utf-8\">\n" +
-                                    "    <title>Invoice</title>\n" +
-                                    "    <style>\n" +
-                                    "        /*!\n" +
-                                    "         * https://www.sparksuite.com/open-source/invoice.html\n" +
-                                    "         * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)\n" +
-                                    "         */\n" +
-                                    "        .invoice-box{max-width:800px;margin:auto;padding:30px;border:1px solid #eee;box-shadow:0 0 10px rgba(0,0,0,.15);font-size:16px;line-height:24px;font-family:'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif;color:#555}.invoice-box table{width:100%;line-height:inherit;text-align:left}.invoice-box table td{padding:5px;vertical-align:top}.invoice-box table tr td:nth-child(3){text-align:right}.invoice-box table tr.top table td{padding-bottom:20px}.invoice-box table tr.top table td.title{font-size:45px;line-height:45px;color:#333}.invoice-box table tr.information table td{padding-bottom:40px}.invoice-box table tr.heading td{background:#eee;border-bottom:1px solid #ddd;font-weight:700}.invoice-box table tr.details td{padding-bottom:20px}.invoice-box table tr.item td{border-bottom:1px solid #eee}.invoice-box table tr.item.last td{border-bottom:none}.invoice-box table tr.total td:nth-child(3){border-top:2px solid #eee;font-weight:700}@media only screen and (max-width:600px){.invoice-box table tr.top table td{width:100%;display:block;text-align:center}.invoice-box table tr.information table td{width:100%;display:block;text-align:center}}.rtl{direction:rtl;font-family:Tahoma,'Helvetica Neue',Helvetica,Helvetica,Arial,sans-serif}.rtl table{text-align:right}.rtl table tr td:nth-child(3){text-align:left}\n" +
-                                    "    </style>\n" +
-                                    "</head>\n" +
-                                    "<body>\n" +
-                                    "<div class=\"invoice-box\">\n" +
-                                    "    <table cellpadding=\"0\" cellspacing=\"0\">\n" +
-                                    "        <tr class=\"top\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td class=\"title\">\n" +
-                                    "                            <img src=\"https://raw.githubusercontent.com/killbill/killbill-docs/v3/userguide/assets/img/logo.png\" style=\"width:100%; max-width:300px;\">\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Invoice INV# 0<br>\n" +
-                                    "                            Invoice Date: \n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"information\">\n" +
-                                    "            <td colspan=\"3\">\n" +
-                                    "                <table>\n" +
-                                    "                    <tr>\n" +
-                                    "                        <td>\n" +
-                                    "                            Acme Corporation<br>\n" +
-                                    "                            57 Academy Drive<br>\n" +
-                                    "                            Oak Creek, WI 53154<br>\n" +
-                                    "                            US\n" +
-                                    "                        </td>\n" +
-                                    "                        <td></td>\n" +
-                                    "                        <td>\n" +
-                                    "                            Sylvie Dupond<br>\n" +
-                                    "                            SauvonsLaTerre<br>\n" +
-                                    "                            1234 Trumpet street<br>\n" +
-                                    "                            San Francisco, CA 94110<br>\n" +
-                                    "                            USA\n" +
-                                    "                        </td>\n" +
-                                    "                    </tr>\n" +
-                                    "                </table>\n" +
-                                    "            </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Thank you for your prompt payment!</td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"details\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"heading\">\n" +
-                                    "            <td>Service Period</td>\n" +
-                                    "            <td>Plan</td>\n" +
-                                    "            <td>Amount</td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Total: </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Amount Paid: </td>\n" +
-                                    "        </tr>\n" +
-                                    "        <tr class=\"total\">\n" +
-                                    "            <td></td>\n" +
-                                    "            <td></td>\n" +
-                                    "            <td>Balance: FOO$ 9.99</td>\n" +
-                                    "        </tr>\n" +
-                                    "    </table>\n" +
-                                    "</div>\n" +
-                                    "</body>\n" +
-                                    "</html>";
-
         Assert.assertEquals(email.getSubject(), "Your recent invoice");
-        Assert.assertEquals(email.getBody(), expectedBody);
+        Assert.assertTrue(email.getBody().contains("FOO$ 9.99"));
     }
 
     private TenantContext createTenantContext() {
@@ -1003,5 +337,15 @@ public class TestTemplateRenderer extends TestBase {
 
     private TenantUserApi getMockTenantUserApi() {
         return new TenantUserApiImp.Builder<>().build();
+    }
+
+    private String getResourceBodyString(final String resource) throws IOException {
+        final Path resourcePath;
+        try {
+            resourcePath = Paths.get(Resources.getResource(resource).toURI());
+            return Files.readString(resourcePath);
+        } catch (final URISyntaxException e) {
+            throw new IOException(e);
+        }
     }
 }
