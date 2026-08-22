@@ -33,15 +33,14 @@ import org.killbill.billing.plugin.notification.exception.EmailNotificationExcep
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailService;
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClientBuilder;
-import com.amazonaws.services.simpleemail.model.Body;
-import com.amazonaws.services.simpleemail.model.Content;
-import com.amazonaws.services.simpleemail.model.Destination;
-import com.amazonaws.services.simpleemail.model.Message;
-import com.amazonaws.services.simpleemail.model.SendEmailRequest;
 import com.google.common.base.Joiner;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.ses.SesClient;
+import software.amazon.awssdk.services.ses.model.Body;
+import software.amazon.awssdk.services.ses.model.Content;
+import software.amazon.awssdk.services.ses.model.Destination;
+import software.amazon.awssdk.services.ses.model.Message;
+import software.amazon.awssdk.services.ses.model.SendEmailRequest;
 
 import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.EMAIL_ADDRESS_INVALID;
 import static org.killbill.billing.plugin.notification.exception.EmailNotificationErrorCode.RECIPIENT_EMAIL_ADDRESS_REQUIRED;
@@ -227,27 +226,45 @@ public class EmailSender {
             return;
         }
 
-        final Regions region = Regions.valueOf(awsRegion.replace("-", "_").toUpperCase());
+        final Region region = Region.of(awsRegion.replace("-", "_").toUpperCase());
 
         logger.debug("Creating AWS SES client...");
-        final AmazonSimpleEmailService client = AmazonSimpleEmailServiceClientBuilder.standard()
-                                                                                     .withRegion(region)
-                                                                                     .build();
-        final SendEmailRequest request = new SendEmailRequest()
-                .withDestination(new Destination().withToAddresses(to).withCcAddresses(cc))
-                .withMessage(new Message()
-                                     .withBody(new Body()
-                                                       .withHtml(new Content().withCharset("UTF-8").withData(body))
-                                                       .withText(new Content().withCharset("UTF-8").withData(body)))
-                                     .withSubject(new Content()
-                                                          .withCharset("UTF-8").withData(subject)))
-                .withSource(this.from);
 
-        logger.info("Sending email to={}, cc={}, subject={}", to, cc, subject);
+        try (final SesClient client = SesClient.builder()
+                                               .region(region)
+                                               .build()) {
 
-        client.sendEmail(request);
+            final SendEmailRequest request =
+                    SendEmailRequest.builder()
+                                    .destination(Destination.builder()
+                                                            .toAddresses(to)
+                                                            .ccAddresses(cc)
+                                                            .build())
+                                    .message(Message.builder()
+                                                    .subject(Content.builder()
+                                                                    .charset("UTF-8")
+                                                                    .data(subject)
+                                                                    .build())
+                                                    .body(Body.builder()
+                                                              .html(Content.builder()
+                                                                           .charset("UTF-8")
+                                                                           .data(body)
+                                                                           .build())
+                                                              .text(Content.builder()
+                                                                           .charset("UTF-8")
+                                                                           .data(body)
+                                                                           .build())
+                                                              .build())
+                                                    .build())
+                                    .source(this.from)
+                                    .build();
 
-        logger.info("Email sent successfully to={}, cc={}, subject={}", to, cc, subject);
+            logger.info("Sending email to={}, cc={}, subject={}", to, cc, subject);
+
+            client.sendEmail(request);
+
+            logger.info("Email sent successfully to={}, cc={}, subject={}", to, cc, subject);
+        }
     }
 
     private void validateEmailFields(final List<String> to, final List<String> cc, final String subject,
