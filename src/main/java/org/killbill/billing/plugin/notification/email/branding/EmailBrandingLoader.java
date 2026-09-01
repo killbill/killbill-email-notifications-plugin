@@ -34,11 +34,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class EmailBrandingLoader {
 
     private static final Map<String, String> DEFAULT_PROPERTIES = Map.of(
-            "companyName", "companyName",
-            "companyAddress", "companyAddr",
-            "companyCityProvincePostalCode", "companyCityProvincePostalCode",
-            "companyCountry", "companyCountry",
-            "companyUrl", "companyUrl",
+            "companyName", "Killbill, Inc.",
+            "companyAddress", "P.O. Box 1234",
+            "companyCityProvincePostalCode", "Springfield",
+            "companyCountry", "USA",
+            "companyUrl", "https://killbill.io",
             "textColor", "#555555",
             "tableBorderColor", "#d4bdd6",
             "tableHeadingBgColor", "#f0f0f0",
@@ -80,9 +80,9 @@ public class EmailBrandingLoader {
     }
 
     public BrandInfo getEmailTemplateBrandInfo(final TenantContext context) {
-        final BrandInfo invoiceTemplate = loadBrandInfo(EmailBrandingKey.EMAIL_TEMPLATE_BRAND_INFO, "email template brand info", context);
+        final BrandInfo templateLevel = loadBrandInfo(EmailBrandingKey.EMAIL_TEMPLATE_BRAND_INFO, "email template brand info", context);
         final BrandInfo global = loadBrandInfo(EmailBrandingKey.BRAND_INFO, "brand info", context);
-        return mergeBrandInfo(invoiceTemplate, global);
+        return mergeBrandInfo(templateLevel, global);
     }
 
     private String getValue(final EmailBrandingKey key,
