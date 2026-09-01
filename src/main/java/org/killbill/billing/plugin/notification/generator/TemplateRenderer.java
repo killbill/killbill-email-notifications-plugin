@@ -38,6 +38,7 @@ import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
 import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.email.EmailContent;
+import org.killbill.billing.plugin.notification.email.branding.EmailBrandingLoader;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.formatters.DefaultInvoiceFormatter;
 import org.killbill.billing.plugin.notification.generator.formatters.PaymentFormatter;
@@ -62,6 +63,7 @@ public class TemplateRenderer {
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;
     private final TenantUserApi tenantApi;
+    private final EmailBrandingLoader emailBrandingLoader;
 
     private ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker;
 
@@ -71,6 +73,7 @@ public class TemplateRenderer {
         this.templateEngine = templateEngine;
         this.bundleFactory = bundleFactory;
         this.tenantApi = tenantApi;
+        this.emailBrandingLoader = new EmailBrandingLoader(tenantApi);
     }
 
     public EmailContent generateEmailForUpComingInvoice(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
@@ -110,6 +113,9 @@ public class TemplateRenderer {
         final Map<String, String> text = getTranslationMap(accountLocale, ResourceBundleFactory.ResourceBundleType.TEMPLATE_TRANSLATION, context);
         data.put("text", text);
         data.put("account", account);
+        data.put("company", emailBrandingLoader.getEmailTemplateCompanyInfo(context));
+        data.put("logo", emailBrandingLoader.getEmailTemplateLogoInfo(context));
+        data.put("brand", emailBrandingLoader.getEmailTemplateBrandInfo(context));
         if (subscription != null) {
             data.put("subscription", subscription);
         }

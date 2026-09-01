@@ -19,6 +19,10 @@
 
 package org.killbill.billing.plugin.notification.templates;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import com.samskivert.mustache.Mustache;
@@ -26,9 +30,20 @@ import com.samskivert.mustache.Template;
 
 public class MustacheTemplateEngine implements TemplateEngine {
 
+    private static final Mustache.TemplateLoader PARTIAL_LOADER = name -> {
+        final String resourcePath = "org/killbill/billing/plugin/notification/templates/" + name + ".mustache";
+        final URL url = MustacheTemplateEngine.class.getClassLoader().getResource(resourcePath);
+        if (url == null) {
+            throw new IOException("Unable to find partial template: " + resourcePath);
+        }
+        return new InputStreamReader(url.openStream(), StandardCharsets.UTF_8);
+    };
+    private static final Mustache.Compiler COMPILER =
+            Mustache.compiler().nullValue("").withLoader(PARTIAL_LOADER);
+
     @Override
     public String executeTemplateText(final String templateText, final Map<String, Object> data) {
-        final Template template = Mustache.compiler().nullValue("").compile(templateText);
+        final Template template = COMPILER.compile(templateText);
         return template.execute(data);
     }
 }
