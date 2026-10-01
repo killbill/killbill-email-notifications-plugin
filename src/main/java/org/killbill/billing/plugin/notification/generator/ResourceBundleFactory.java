@@ -31,7 +31,7 @@ import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 import org.killbill.billing.plugin.notification.setup.EmailNotificationActivator;
-import org.killbill.billing.plugin.notification.util.LocaleUtils;
+import org.killbill.commons.utils.locale.LocaleUtils;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.tenant.api.TenantKV;
 import org.killbill.billing.tenant.api.TenantUserApi;
