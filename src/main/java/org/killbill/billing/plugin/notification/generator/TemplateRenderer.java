@@ -29,26 +29,27 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
-import javax.annotation.Nullable;
+import jakarta.annotation.Nullable;
 
 import org.killbill.billing.account.api.AccountData;
 import org.killbill.billing.entitlement.api.Subscription;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.formatters.InvoiceFormatter;
+import org.killbill.billing.invoice.branding.BrandingLoader;
 import org.killbill.billing.payment.api.PaymentTransaction;
 import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.email.EmailContent;
-import org.killbill.billing.plugin.notification.email.branding.EmailBrandingLoader;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.killbill.billing.plugin.notification.generator.formatters.DefaultInvoiceFormatter;
 import org.killbill.billing.plugin.notification.generator.formatters.PaymentFormatter;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateType;
 import org.killbill.billing.plugin.notification.util.IOUtils;
-import org.killbill.billing.plugin.notification.util.LocaleUtils;
 import org.killbill.billing.tenant.api.TenantApiException;
+import org.killbill.billing.tenant.api.TenantKV.TenantKey;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.util.callcontext.TenantContext;
+import org.killbill.commons.utils.locale.LocaleUtils;
 import org.osgi.util.tracker.ServiceTracker;
 
 import com.google.common.base.Strings;
@@ -63,7 +64,8 @@ public class TemplateRenderer {
     private final TemplateEngine templateEngine;
     private final ResourceBundleFactory bundleFactory;
     private final TenantUserApi tenantApi;
-    private final EmailBrandingLoader emailBrandingLoader;
+    private final BrandingLoader brandingLoader;
+
 
     private ServiceTracker<InvoiceFormatterFactory, InvoiceFormatterFactory> invoiceFormatterTracker;
 
@@ -73,7 +75,7 @@ public class TemplateRenderer {
         this.templateEngine = templateEngine;
         this.bundleFactory = bundleFactory;
         this.tenantApi = tenantApi;
-        this.emailBrandingLoader = new EmailBrandingLoader(tenantApi);
+        this.brandingLoader = new BrandingLoader(tenantApi);
     }
 
     public EmailContent generateEmailForUpComingInvoice(final AccountData account, final Invoice invoice, final TenantContext context) throws IOException, TenantApiException, EmailNotificationException {
@@ -113,9 +115,9 @@ public class TemplateRenderer {
         final Map<String, String> text = getTranslationMap(accountLocale, ResourceBundleFactory.ResourceBundleType.TEMPLATE_TRANSLATION, context);
         data.put("text", text);
         data.put("account", account);
-        data.put("company", emailBrandingLoader.getEmailTemplateCompanyInfo(context));
-        data.put("logo", emailBrandingLoader.getEmailTemplateLogoInfo(context));
-        data.put("brand", emailBrandingLoader.getEmailTemplateBrandInfo(context));
+        data.put("company", brandingLoader.getCompanyInfo(TenantKey.EMAIL_TEMPLATE_COMPANY_INFO, TenantKey.COMPANY_INFO, context));
+        data.put("logo", brandingLoader.getLogoInfo(TenantKey.EMAIL_TEMPLATE_LOGO_INFO, TenantKey.LOGO_INFO, context));
+        data.put("brand", brandingLoader.getBrandInfo(TenantKey.EMAIL_TEMPLATE_BRAND_INFO, TenantKey.BRAND_INFO, context));
         if (subscription != null) {
             data.put("subscription", subscription);
         }

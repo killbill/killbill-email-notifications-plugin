@@ -7,7 +7,7 @@ package org.killbill.billing.plugin.notification.dao.gen.tables.pojos;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 
 import org.jooq.types.ULong;
 

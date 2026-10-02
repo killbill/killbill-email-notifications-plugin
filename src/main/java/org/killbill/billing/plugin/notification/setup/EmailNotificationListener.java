@@ -24,7 +24,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.UUID;
 
-import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail2.core.EmailException;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.killbill.billing.account.api.Account;

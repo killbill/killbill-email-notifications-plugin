@@ -21,7 +21,7 @@
 package org.killbill.billing.plugin.notification.dao.gen;
 
 
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 
 import org.jooq.Index;
 import org.jooq.OrderField;

@@ -20,7 +20,7 @@ package org.killbill.billing.plugin.notification.email;
 
 import java.io.IOException;
 
-import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail2.core.EmailException;
 import org.killbill.billing.plugin.notification.exception.EmailNotificationException;
 import org.mockito.Mockito;
 import org.testng.annotations.Test;
