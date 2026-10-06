@@ -1,15 +1,22 @@
 name: ci
 
 on:
-  - push
-  - pull_request
-  - workflow_dispatch
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      purge-cache:
+        description: 'Purge the Maven dependency cache before running'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   ci:
     uses: killbill/gh-actions-shared/.github/workflows/ci.yml@main
     with:
       test-profile-matrix: '[ "travis", "integration-mysql", "integration-postgresql" ]'
+      purge-cache: ${{ inputs.purge-cache || false }}
     secrets:
       CLOUDSMITH_CENTRAL_PASSWORD: ${{ secrets.CLOUDSMITH_CENTRAL_PASSWORD }}
       CLOUDSMITH_KILLBILL_MAVEN_REPO_PASSWORD: ${{ secrets.CLOUDSMITH_KILLBILL_MAVEN_REPO_PASSWORD }}
