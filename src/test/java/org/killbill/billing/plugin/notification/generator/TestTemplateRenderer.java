@@ -54,13 +54,13 @@ import org.killbill.billing.plugin.notification.api.InvoiceFormatterFactory;
 import org.killbill.billing.plugin.notification.email.EmailContent;
 import org.killbill.billing.plugin.notification.templates.MustacheTemplateEngine;
 import org.killbill.billing.plugin.notification.templates.TemplateEngine;
-import org.killbill.billing.plugin.notification.util.LocaleUtils;
 import org.killbill.billing.tenant.api.TenantApiException;
+import org.killbill.commons.utils.io.Resources;
+import org.killbill.commons.utils.locale.LocaleUtils;
 import org.killbill.billing.tenant.api.TenantUserApi;
 import org.killbill.billing.tenant.api.boilerplate.TenantUserApiImp;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.killbill.billing.util.callcontext.boilerplate.TenantContextImp;
-import org.killbill.commons.utils.io.Resources;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -75,12 +75,14 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.anyMap;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
 
-@Test(groups = "fast")
+@Test(groups = "fast", description = "JDK dependent")
 public class TestTemplateRenderer extends TestBase {
 
     private final Logger log = LoggerFactory.getLogger(TestTemplateRenderer.class);
@@ -102,15 +104,15 @@ public class TestTemplateRenderer extends TestBase {
 
     private TemplateRenderer renderer;
 
+    @Mock
     private TenantUserApi tenantUserApi;
 
     @BeforeMethod
-    public void beforeMethod() throws TenantApiException {
+    public void beforeMethod() throws TenantApiException, IOException {
         MockitoAnnotations.initMocks(this);
-
+        when(tenantUserApi.getTenantValuesForKey(anyString(), any(TenantContext.class)))
+                .thenReturn(Collections.emptyList());
         final TemplateEngine templateEngine = new MustacheTemplateEngine();
-        tenantUserApi = Mockito.mock(TenantUserApi.class);
-        when(tenantUserApi.getTenantValuesForKey(Mockito.any(), Mockito.any())).thenReturn(Collections.emptyList());
         final ResourceBundleFactory bundleFactory = new ResourceBundleFactory(tenantUserApi);
         renderer = new TemplateRenderer(templateEngine, bundleFactory, tenantUserApi);
     }
@@ -209,32 +211,6 @@ public class TestTemplateRenderer extends TestBase {
         Assert.assertTrue(email.getBody().contains("Here&#39;s a preview of your upcoming invoice"));
     }
 
-    public void testInvoiceCreationNewTemplateAndNewTenantVariables() throws Exception {
-        final AccountData account = createAccount();
-        final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
-        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), account.getCurrency(), "chocolate-monthly"));
-        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.5500"), account.getCurrency(), "chocolate-monthly"));
-        final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
-
-        final UUID tenantId = UUID.randomUUID();
-        final TenantContext tenantContext = new TenantContextImp.Builder<>().withTenantId(tenantId).build();
-        final String templateWithNewFields = getResourceBodyString("org/killbill/billing/plugin/notification/templates/InvoiceCreation-new-fields.mustache");
-        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("killbill-email-notifications:INVOICE_CREATION_en_US"), Mockito.any())).thenReturn(List.of(templateWithNewFields));
-        final String companyInfo = getResourceBodyString("org/killbill/billing/plugin/notification/templates/companyInfo.json");
-        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("COMPANY_INFO"), Mockito.any())).thenReturn(List.of(companyInfo));
-        final String logoInfo = getResourceBodyString("org/killbill/billing/plugin/notification/templates/logoInfo.json");
-        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("EMAIL_TEMPLATE_LOGO_INFO"), Mockito.any())).thenReturn(List.of(logoInfo));
-        final String brandInfo = getResourceBodyString("org/killbill/billing/plugin/notification/templates/brandInfo.json");
-        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("EMAIL_TEMPLATE_BRAND_INFO"), Mockito.any())).thenReturn(List.of(brandInfo));
-
-        final EmailContent email = renderer.generateEmailForInvoiceCreation(account, invoice, tenantContext);
-
-        Assert.assertEquals(email.getSubject(), "Your recent invoice");
-        Assert.assertTrue(email.getBody().contains("Thank you for your prompt payment!"));
-        Assert.assertTrue(email.getBody().contains("CloudSprout"));
-        Assert.assertTrue(email.getBody().contains("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDA"));
-        Assert.assertTrue(email.getBody().contains("--text-color: red"));
-    }
 
     public void testCreateInvoiceWithCustomFormatterFactory() throws Exception {
         // GIVEN
@@ -269,6 +245,55 @@ public class TestTemplateRenderer extends TestBase {
         // THEN
         Assert.assertEquals(email.getSubject(), "Your recent invoice");
         Assert.assertTrue(email.getBody().contains("FOO$ 9.99"));
+    }
+
+    public void testInvoiceCreationVerifyBrandingInformation() throws Exception {
+        final AccountData account = createAccount();
+        final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), account.getCurrency(), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.5500"), account.getCurrency(), "chocolate-monthly"));
+        final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
+
+        final UUID tenantId = UUID.randomUUID();
+        final TenantContext tenantContext = new TenantContextImp.Builder<>().withTenantId(tenantId).build();
+
+        final String companyInfo = getResourceBodyString("org/killbill/billing/plugin/notification/templates/companyInfo.json");
+        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("COMPANY_INFO"), any())).thenReturn(List.of(companyInfo));
+        final String logoInfo = getResourceBodyString("org/killbill/billing/plugin/notification/templates/logoInfo.json");
+        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("EMAIL_TEMPLATE_LOGO_INFO"), any())).thenReturn(List.of(logoInfo));
+        final String brandInfo = getResourceBodyString("org/killbill/billing/plugin/notification/templates/brandInfo.json");
+        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("EMAIL_TEMPLATE_BRAND_INFO"), any())).thenReturn(List.of(brandInfo));
+
+
+        final EmailContent email = renderer.generateEmailForInvoiceCreation(account, invoice, tenantContext);
+
+        Assert.assertEquals(email.getSubject(), "Your recent invoice");
+        Assert.assertTrue(email.getBody().contains("Thank you for your prompt payment!"));
+        Assert.assertTrue(email.getBody().contains("CloudSprout"));
+        Assert.assertTrue(email.getBody().contains("/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAMCAgMCAgMDA"));
+        Assert.assertTrue(email.getBody().contains("--text-color: red"));
+    }
+
+    public void testInvoiceCreationLegacyTemplate() throws Exception {
+        final AccountData account = createAccount();
+        final List<InvoiceItem> items = new ArrayList<InvoiceItem>();
+        items.add(createInvoiceItem(InvoiceItemType.RECURRING, new LocalDate("2015-04-06"), new BigDecimal("123.45"), account.getCurrency(), "chocolate-monthly"));
+        items.add(createInvoiceItem(InvoiceItemType.TAX, new LocalDate("2015-04-06"), new BigDecimal("7.5500"), account.getCurrency(), "chocolate-monthly"));
+        final Invoice invoice = createInvoice(234, new LocalDate("2015-04-06"), new BigDecimal("131.00"), BigDecimal.ZERO, account.getCurrency(), items);
+
+        final UUID tenantId = UUID.randomUUID();
+        final TenantContext tenantContext = new TenantContextImp.Builder<>().withTenantId(tenantId).build();
+        final String legacyTemplate = getResourceBodyString("org/killbill/billing/plugin/notification/templates/InvoiceCreation-legacy.mustache");
+        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("killbill-email-notifications:INVOICE_CREATION_en_US"), Mockito.any())).thenReturn(List.of(legacyTemplate));
+        final String legacyTranslations = getResourceBodyString("org/killbill/billing/plugin/notification/templates/Translation_legacy_en.properties");
+        when(tenantUserApi.getTenantValuesForKey(Mockito.eq("killbill-email-notifications:TEMPLATE_TRANSLATION_en_US"), Mockito.any())).thenReturn(List.of(legacyTranslations));
+
+        final EmailContent email = renderer.generateEmailForInvoiceCreation(account, invoice, tenantContext);
+
+        Assert.assertEquals(email.getSubject(), "Your recent invoice");
+        Assert.assertTrue(email.getBody().contains("Thank you for your prompt payment!"));
+        Assert.assertTrue(email.getBody().contains("Acme Corporation")); //company name from legacy translation file
+        Assert.assertTrue(email.getBody().contains("logo.png")); //logo is URL and not base64 encoded
     }
 
     private TenantContext createTenantContext() {
@@ -333,10 +358,6 @@ public class TestTemplateRenderer extends TestBase {
                                                     .withProcessedAmount(new BigDecimal("20.0"))
                                                     .withProcessedCurrency(Currency.USD)
                                                     .build();
-    }
-
-    private TenantUserApi getMockTenantUserApi() {
-        return new TenantUserApiImp.Builder<>().build();
     }
 
     private String getResourceBodyString(final String resource) throws IOException {

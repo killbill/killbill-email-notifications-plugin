@@ -31,7 +31,7 @@ import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 import org.killbill.billing.plugin.notification.setup.EmailNotificationActivator;
-import org.killbill.billing.plugin.notification.util.LocaleUtils;
+import org.killbill.commons.utils.locale.LocaleUtils;
 import org.killbill.billing.tenant.api.TenantApiException;
 import org.killbill.billing.tenant.api.TenantKV;
 import org.killbill.billing.tenant.api.TenantUserApi;
@@ -43,9 +43,9 @@ import com.google.common.base.Charsets;
 
 public class ResourceBundleFactory {
 
-    private final String DEFAULT_TRANSLATION_PATH_PREFIX = "org/killbill/billing/plugin/notification/translations/";
+    private static final String DEFAULT_TRANSLATION_PATH_PREFIX = "org/killbill/billing/plugin/notification/translations/";
 
-    private final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
+    private static final Logger logger = LoggerFactory.getLogger(ResourceBundleFactory.class);
 
     private final TenantUserApi tenantApi;
 
